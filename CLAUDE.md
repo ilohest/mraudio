@@ -86,7 +86,8 @@ se réduisent à leur **icône seule**, en une rangée. Leur libellé disparaît
 de la page : `aria-label` et `title` le gardent pour les lecteurs d'écran et l'appui long, et
 « Reproduir » garde le sien — c'est la commande qu'il ne faut pas deviner.
 
-**Pied de page** : la légende du clavier, puis un colophon en deux colonnes sous un filet — les
+**Pied de page** : une carte comme les autres, posée sous la ligne de flottaison. Elle porte la
+légende du clavier, puis un colophon en deux colonnes sous un filet — les
 voix de la langue écoutée à gauche, la signature d'Isaure (lien vers isaure-lohest.com) à droite.
 Les voix sont dans `i18n.ts` (`voices`, `voiceNames`) parce qu'elles changent avec le jeu d'audios :
 CA Jeanne & Jean-Christophe Lohest, Josep-Maria Sagrera · ES Esther & Adrés Molero ·

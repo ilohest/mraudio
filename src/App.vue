@@ -128,7 +128,7 @@ onMounted(() => addEventListener('keydown', onKey))
       </main>
     </div>
 
-    <footer class="foot">
+    <footer class="card foot">
       <!-- Légende du clavier : la touche dessinée comme une touche, puis ce qu'elle fait. -->
       <p class="keys">
         <span class="item"><kbd>{{ t.keySpace }}</kbd>{{ t.keyPlay }}</span>
@@ -232,8 +232,10 @@ onMounted(() => addEventListener('keydown', onKey))
   color: var(--dim);
 }
 
+/* Le pied de page est une carte comme les autres, en dessous de la ligne de flottaison. */
 .foot {
-  padding: 12px var(--gap) calc(var(--gap) + 8px);
+  margin: 0 var(--gap) var(--gap);
+  padding: var(--pad);
   font: 400 0.84rem/1.45 var(--sans);
   color: var(--dim);
 }
@@ -303,8 +305,13 @@ kbd {
   border-radius: 5px;
 }
 
-/* Sans clavier, la légende n'a rien à dire ; le colophon, lui, reste. */
+/* Sans clavier, la légende n'a rien à dire ; le colophon, lui, reste — et le filet qui
+   les séparait n'a plus rien à séparer. */
 @media (pointer: coarse) {
   .keys { display: none; }
+  .colophon {
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 </style>
