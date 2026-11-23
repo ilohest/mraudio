@@ -83,9 +83,11 @@ Détails à ne pas casser :
   internes sont en **`cqi`**, pas en `vw` : la colonne de droite fait 400 px sur une page de
   1400, donc une taille calibrée sur l'écran y serait énorme. Sortir un composant d'un `.pane`
   casse ses tailles. Les points de rupture internes sont en `@container`, pas en `@media`.
-- La taille du chiffre romain suit sa longueur (`len-l`, `len-xl` dans `NowPlaying.vue`) : sans ça
-  `XXXVIII` se coupe en deux lignes. Les chiffres sont en `white-space: nowrap`, mais les **noms**
-  (« Pare Daurat ») gardent le droit de passer à la ligne.
+- La taille suit la longueur du chiffre romain (`heroSize` → `len-l`, `len-xl` dans
+  `NowPlaying.vue`) : sans ça `XXXVIII` se coupe en deux lignes. Elle s'applique **aux deux
+  cases** — si on ne la donnait qu'au livre, « XXXVIII » rapetisserait pendant que le verset
+  resterait à pleine taille, et les filets de champ comme les lignes d'indication cesseraient
+  d'être à la même hauteur.
 - La barre de commandes est en **flex**, pas en grille : en grille, la dernière rangée laissait une
   case vide grise sur mobile.
 - Le rail de progression porte la mesure du `seek` — c'est `rail`, pas `bar`, qu'on interroge.

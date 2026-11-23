@@ -100,8 +100,13 @@ const range = computed(() => (book.value !== null ? props.catalog.range(book.val
 const bookOk = computed(
   () => book.value !== null && book.value >= FIRST_BOOK && book.value <= LAST_BOOK && !!range.value,
 )
-/* XXXVIII est trois fois plus long que VII : la taille suit le nombre de signes. */
-const bookSize = computed(() => {
+/**
+ * XXXVIII est trois fois plus long que VII : la taille suit le nombre de signes, sinon le
+ * chiffre romain se casse en deux lignes. Elle vaut pour **les deux cases** — c'est le
+ * chiffre romain, le plus long des deux, qui décide. Si on ne l'appliquait qu'au livre,
+ * les filets de champ et les lignes d'indication ne seraient plus à la même hauteur.
+ */
+const heroSize = computed(() => {
   const n = bookInput.value.trim().length
   return n >= 6 ? 'len-xl' : n >= 4 ? 'len-l' : ''
 })
@@ -234,12 +239,12 @@ const chainOpts = computed(() => [
       <label class="slot">
         <span class="micro">{{ t.book }}</span>
         <span class="field">
-          <Reel v-if="rolling" class="mega" :class="bookSize" :items="bookReel" :duration="1000" />
+          <Reel v-if="rolling" class="mega" :class="heroSize" :items="bookReel" :duration="1000" />
           <input
             v-else
             v-model="bookInput"
             class="mega"
-            :class="bookSize"
+            :class="heroSize"
             type="text"
             inputmode="text"
             autocomplete="off"
@@ -259,12 +264,13 @@ const chainOpts = computed(() => [
       <label class="slot verse">
         <span class="micro">{{ t.verse }}</span>
         <span class="field">
-          <Reel v-if="rolling" class="mega accent" :items="verseReel" :duration="1300" :delay="110" />
+          <Reel v-if="rolling" class="mega accent" :class="heroSize" :items="verseReel" :duration="1300" :delay="110" />
           <input
             v-else
             ref="verseEl"
             v-model="verseInput"
             class="mega accent"
+            :class="heroSize"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
