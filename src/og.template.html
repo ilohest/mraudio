@@ -30,39 +30,24 @@
       .texte { flex: 1; min-width: 0; }
       .auteur {
         font-family: 'Ronzino', sans-serif;
-        font-size: 30px;
+        font-size: 34px;
         letter-spacing: 0.01em;
         color: rgb(34 34 34 / 0.62);
       }
-      /* Les trois titres empilés : le site est trilingue, l'aperçu le dit sans le répéter. */
-      .titres { margin-top: 44px; }
-      .titres p { font-size: 78px; line-height: 1.08; letter-spacing: -0.022em; }
-      .titres p + p { color: rgb(34 34 34 / 0.42); font-size: 54px; line-height: 1.18; }
-      .titres p:nth-child(2) { margin-top: 18px; }
-      .pied {
-        margin-top: 48px;
-        padding-top: 26px;
-        border-top: 1px solid rgb(34 34 34 / 0.22);
-        display: flex;
-        align-items: baseline;
-        gap: 18px;
-        font-family: 'Ronzino', sans-serif;
-        font-size: 28px;
-        color: rgb(34 34 34 / 0.62);
+      /* Deux lignes seulement : l'auteur et l'œuvre. Le reste est du souffle. */
+      .titre {
+        margin-top: 34px;
+        font-size: 108px;
+        line-height: 1.04;
+        letter-spacing: -0.026em;
       }
-      .pied b { font-weight: 400; color: #222222; }
-      .marque { flex: none; width: 232px; height: 232px; }
+      .marque { flex: none; width: 286px; height: 286px; }
     </style>
   </head>
   <body>
     <div class="texte">
       <p class="auteur">Louis Cattiaux</p>
-      <div class="titres">
-        <p>El Missatge Retrobat</p>
-        <p>El Mensaje Reencontrado</p>
-        <p>Le Message Retrouvé</p>
-      </div>
-      <p class="pied"><b>mraudio.app</b> <span>5 615 enregistraments</span></p>
+      <p class="titre">Le Message Retrouvé</p>
     </div>
 
     <!-- La même oreille que l'icône du site. -->

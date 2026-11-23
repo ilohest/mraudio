@@ -323,7 +323,10 @@ les sortir ailleurs.
 **Aperçu de partage** : `src/og.template.html` → `src/assets/og.png` (1200 × 630), fabriquée par
 `node scripts/og.mjs` via Chrome sans interface — seul moyen sûr d'avoir les vraies fontes et des
 dimensions exactes. **L'image est versionnée** pour qu'un déploiement n'ait jamais besoin de
-Chrome. Les trois titres y sont empilés : le site est trilingue, l'aperçu le dit sans le répéter.
+Chrome. Elle ne porte que l'auteur, le titre français et l'oreille — Isaure a écarté les trois titres
+empilés d'une première version. Les balises suivent l'image : `og:title` et `og:locale` sont en
+français, les deux autres langues restant en `og:locale:alternate`, et la description reste
+trilingue pour qu'un lecteur catalan ou espagnol sache que sa langue existe.
 Les adresses des balises sont **absolues** (`https://mraudio.app/og.png`) : un aperçu est fabriqué
 par un serveur distant, qui ne sait pas d'où la page a été servie. Changer de domaine oblige donc
 à les reprendre dans `index.html`.
