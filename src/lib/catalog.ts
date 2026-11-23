@@ -7,6 +7,9 @@ export const LAST_BOOK = 40
 export const PRELIM_BOOK = 0
 export const LITANIES_BOOK = 41
 
+/** Un tirage sur cinquante tombe sur les préliminaires ou les litanies. */
+export const SPECIAL_ODDS = 50
+
 interface Manifest {
   lang: Lang
   ext: string
@@ -68,16 +71,18 @@ export class Catalog {
   }
 
   /**
-   * Tirage : les versets des livres I–XL, plus les préliminaires et les litanies —
-   * seule façon de les atteindre depuis que la ligne « També » a été retirée.
-   * Les épigraphes (verset 0 des livres I–XL) restent hors du tirage.
+   * Tirage. Les préliminaires et les litanies n'ont que quatre pistes face à 2 805 versets :
+   * à égalité de chances elles ne sortiraient qu'un tirage sur sept cents, c'est-à-dire
+   * jamais. On tire donc d'abord le genre — une fois sur cinquante, ce sera l'une d'elles —
+   * puis la piste dans son propre lot. Les épigraphes (verset 0) restent hors du tirage.
    */
   random(exclude?: Track | null) {
-    const pool = this.tracks.filter((tr) =>
-      tr.book === PRELIM_BOOK || tr.book === LITANIES_BOOK
-        ? true
-        : tr.book >= FIRST_BOOK && tr.book <= LAST_BOOK && tr.verse > 0 && !tr.part,
+    const special = this.tracks.filter((tr) => tr.book === PRELIM_BOOK || tr.book === LITANIES_BOOK)
+    const verses = this.tracks.filter(
+      (tr) => tr.book >= FIRST_BOOK && tr.book <= LAST_BOOK && tr.verse > 0 && !tr.part,
     )
+    const wantsSpecial = special.length > 0 && Math.random() < 1 / SPECIAL_ODDS
+    const pool = wantsSpecial || verses.length === 0 ? special : verses
     let pick: Track
     do pick = pool[Math.floor(Math.random() * pool.length)]
     while (pool.length > 1 && exclude && pick.id === exclude.id)

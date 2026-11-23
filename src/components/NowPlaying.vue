@@ -52,7 +52,10 @@ function syncFromTrack() {
 
 /* Tirage : deux rouleaux qui glissent et se posent l'un après l'autre. Le défilé est
    une seule transition de transform — le navigateur l'interpole, d'où la fluidité. */
-const REEL = 20
+/* Assez de valeurs pour que la course soit longue, plus deux en réserve sous la bonne :
+   la courbe dépasse d'un cran avant de se caler, et il faut quelque chose à y découvrir. */
+const REEL = 22
+const SPARES = 2
 const rolling = ref(false)
 const bookReel = ref<string[]>([])
 const verseReel = ref<string[]>([])
@@ -65,8 +68,10 @@ const ROMANS = Array.from({ length: LAST_BOOK }, (_, i) => toRoman(i + 1))
 function reelOf(target: string, pool: string[]) {
   const same = pool.filter((s) => s.length === target.length && s !== target)
   const src = same.length >= 4 ? same : pool.filter((s) => s.length <= target.length)
-  const out = Array.from({ length: REEL - 1 }, () => src[Math.floor(Math.random() * src.length)] ?? target)
+  const pick = () => src[Math.floor(Math.random() * src.length)] ?? target
+  const out = Array.from({ length: REEL }, pick)
   out.push(target)
+  for (let i = 0; i < SPARES; i++) out.push(pick())
   return out
 }
 
@@ -89,7 +94,7 @@ watch(
     bookReel.value = reelOf(toRoman(tr.book), ROMANS)
     verseReel.value = reelOf(String(tr.verse), sameWidthNumbers(String(tr.verse).length))
     rolling.value = true
-    timer = window.setTimeout(() => (rolling.value = false), 1600)
+    timer = window.setTimeout(() => (rolling.value = false), 2700)
   },
   { immediate: true },
 )
@@ -111,10 +116,18 @@ const heroSize = computed(() => {
   return n >= 6 ? 'len-xl' : n >= 4 ? 'len-l' : ''
 })
 
+/**
+ * L'indication ne dit rien quand le champ montre déjà le chiffre romain : il est écrit
+ * en grand juste au-dessus, et le nombre de versets est déjà dans la plage d'en face.
+ * Elle ne sert qu'à confirmer une saisie en chiffres arabes : « 32 » → « XXXII ».
+ */
 const bookHint = computed(() => {
-  if (rolling.value || !bookInput.value.trim()) return ''
-  if (!bookOk.value || !range.value) return '—'
-  return `${toRoman(book.value!)} · ${t.value.versesIn(range.value[1])}`
+  if (rolling.value) return ''
+  const raw = bookInput.value.trim()
+  if (!raw) return ''
+  if (!bookOk.value) return '—'
+  const roman = toRoman(book.value!)
+  return raw.toUpperCase() === roman ? '' : roman
 })
 const verseHint = computed(() => (rolling.value || !range.value ? '' : `${range.value[0]} – ${range.value[1]}`))
 
@@ -239,7 +252,14 @@ const chainOpts = computed(() => [
       <label class="slot">
         <span class="micro">{{ t.book }}</span>
         <span class="field">
-          <Reel v-if="rolling" class="mega" :class="heroSize" :items="bookReel" :duration="1000" />
+          <Reel
+            v-if="rolling"
+            class="mega"
+            :class="heroSize"
+            :items="bookReel"
+            :land-at="bookReel.length - 1 - SPARES"
+            :duration="1700"
+          />
           <input
             v-else
             v-model="bookInput"
@@ -264,7 +284,15 @@ const chainOpts = computed(() => [
       <label class="slot verse">
         <span class="micro">{{ t.verse }}</span>
         <span class="field">
-          <Reel v-if="rolling" class="mega accent" :class="heroSize" :items="verseReel" :duration="1300" :delay="110" />
+          <Reel
+            v-if="rolling"
+            class="mega accent"
+            :class="heroSize"
+            :items="verseReel"
+            :land-at="verseReel.length - 1 - SPARES"
+            :duration="2050"
+            :delay="160"
+          />
           <input
             v-else
             ref="verseEl"
@@ -334,16 +362,22 @@ const chainOpts = computed(() => [
           <Icon :name="playing ? 'pause' : 'play'" />
           <span>{{ playing ? t.pause : t.play }}</span>
         </button>
-        <button type="button" :disabled="!hasPrev" @click="emit('prev')">
+        <button type="button" :disabled="!hasPrev" :aria-label="t.prev" :title="t.prev" @click="emit('prev')">
           <Icon name="prev" /><span>{{ t.prev }}</span>
         </button>
-        <button type="button" @click="restart">
+        <button type="button" :aria-label="t.replay" :title="t.replay" @click="restart">
           <Icon name="restart" /><span>{{ t.replay }}</span>
         </button>
-        <button type="button" :disabled="!hasNext" @click="emit('next')">
+        <button type="button" :disabled="!hasNext" :aria-label="t.next" :title="t.next" @click="emit('next')">
           <Icon name="next" /><span>{{ t.next }}</span>
         </button>
-        <button type="button" :class="{ done: copied }" @click="share">
+        <button
+          type="button"
+          :class="{ done: copied }"
+          :aria-label="copied ? t.copied : t.share"
+          :title="copied ? t.copied : t.share"
+          @click="share"
+        >
           <Icon :name="copied ? 'check' : 'link'" /><span>{{ copied ? t.copied : t.share }}</span>
         </button>
       </nav>
@@ -369,26 +403,38 @@ const chainOpts = computed(() => [
 </template>
 
 <style scoped>
-.now { display: block; }
+/* La carte occupe toute la hauteur qu'on lui donne ; c'est le repère qui absorbe
+   le surplus, les commandes gardent leur taille. */
+.now {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
 /* Ce qui joue mais n'a pas de numéro, ou l'invitation quand rien ne joue encore. */
 .standing {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 3px 12px;
   margin: 0;
   padding: var(--pad) var(--pad) 0;
+  /* Les préliminaires et les litanies n'ont pas de rouleau : au moins, le nom arrive
+     avec le même mouvement que les deux cases. */
+  animation: lift 0.62s cubic-bezier(0.22, 1.15, 0.3, 1) both;
 }
 .standing .name {
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(1.5rem, 5cqi, 2.5rem);
+  font-size: clamp(1.3rem, min(5cqi, 8cqh), 2.5rem);
   line-height: 1.1;
   letter-spacing: -0.012em;
 }
 
 .hero {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
@@ -402,7 +448,9 @@ const chainOpts = computed(() => [
 
 .slot {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: var(--pad);
   min-width: 0;
   cursor: text;
@@ -447,7 +495,7 @@ const chainOpts = computed(() => [
   color: var(--ink);
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(3.2rem, 15cqi, 8.5rem);
+  font-size: clamp(2.2rem, min(15cqi, 28cqh), 8.5rem);
   line-height: 0.95;
   letter-spacing: -0.012em;
   font-variant-numeric: lining-nums;
@@ -455,8 +503,8 @@ const chainOpts = computed(() => [
 .mega:focus { outline: none; }
 .mega::placeholder { color: var(--line); }
 /* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
-.mega.len-l { font-size: clamp(2.6rem, 11.5cqi, 6.4rem); }
-.mega.len-xl { font-size: clamp(2rem, 9cqi, 5rem); }
+.mega.len-l { font-size: clamp(1.9rem, min(11.5cqi, 22cqh), 6.4rem); }
+.mega.len-xl { font-size: clamp(1.5rem, min(9cqi, 17.5cqh), 5rem); }
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }
 .hint { font-size: 0.8rem; }
@@ -464,6 +512,7 @@ const chainOpts = computed(() => [
 
 /* Le bouton se déplie au lieu d'apparaître d'un coup. */
 .reveal {
+  flex: none;
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.3, 1);
@@ -502,6 +551,7 @@ const chainOpts = computed(() => [
 }
 
 .scrub {
+  flex: none;
   position: relative;
   display: flex;
   align-items: center;
@@ -567,6 +617,7 @@ const chainOpts = computed(() => [
 /* Boutons blancs posés sur la carte grise. Flex : la dernière rangée s'étire au lieu
    de laisser une case vide. */
 .controls {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -621,6 +672,7 @@ const chainOpts = computed(() => [
 }
 
 .chain {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -650,16 +702,17 @@ const chainOpts = computed(() => [
 .opts button.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .opts button:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
 
+/* Carte étroite — téléphone. Le repère reste sur deux colonnes : empilé, il coûtait à lui
+   seul une demi-hauteur d'écran. Et les commandes secondaires se réduisent à leur icône,
+   qui se passe de légende ; leur nom reste pour les lecteurs d'écran et en appui long. */
 @container (max-width: 620px) {
-  .hero { grid-template-columns: 1fr; }
-  .slot.verse::before {
-    left: var(--pad);
-    right: var(--pad);
-    top: 0;
-    bottom: auto;
-    width: auto;
-    height: 1px;
-  }
+  .slot { padding: var(--pad) calc(var(--pad) * 0.7); }
   .controls .primary { flex-basis: 100%; }
+  .controls button:not(.primary) {
+    flex: 1 1 0;
+    padding: 16px 6px;
+  }
+  .controls button:not(.primary) span { display: none; }
+  .chain { gap: 8px 12px; }
 }
 </style>

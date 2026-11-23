@@ -37,7 +37,7 @@ function onClick() {
   background: var(--ink);
   color: var(--bg);
   cursor: pointer;
-  padding: clamp(26px, 3.6vw, 44px) var(--pad);
+  padding: clamp(20px, min(3.6vw, 3.2svh), 40px) var(--pad);
   text-align: left;
   transition:
     transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1),
@@ -46,14 +46,14 @@ function onClick() {
 .label {
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(1.45rem, 3.6vw, 2.3rem);
+  font-size: clamp(1.3rem, min(3.6vw, 3.1svh), 2.3rem);
   line-height: 1.1;
   letter-spacing: -0.015em;
 }
 .arrow {
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(1.6rem, 3.8vw, 2.4rem);
+  font-size: clamp(1.4rem, min(3.8vw, 3.3svh), 2.4rem);
   line-height: 1;
   transition: transform 0.34s cubic-bezier(0.34, 1.5, 0.64, 1);
 }

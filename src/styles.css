@@ -41,7 +41,9 @@
   --r: 12px;
   --r-sm: 8px;
   --gap: 16px;
-  --pad: clamp(18px, 2.6vw, 30px);
+  /* Les marges suivent la largeur ET la hauteur : sur un écran large et peu haut,
+     c'est la hauteur qui doit commander, sinon la page déborde. */
+  --pad: clamp(16px, min(2.6vw, 2.8svh), 30px);
   color-scheme: light;
 }
 

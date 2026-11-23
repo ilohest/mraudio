@@ -58,14 +58,45 @@ franchit les livres et lit aussi les épigraphes : c'est une lecture continue de
 
 **Tirage** : il couvre les versets des livres I–XL, **plus les préliminaires et les litanies** —
 c'est leur seul accès depuis que la ligne « També » a été retirée. Attention : cela ne fait que
-4 pistes sur 2 809, soit **à peu près un tirage sur sept cents**. Si la cliente veut vraiment
-qu'on tombe dessus, il faudra les pondérer. Les épigraphes restent hors du tirage.
+4 pistes sur 2 809 : à chances égales elles ne sortiraient qu'un tirage sur sept cents. Le tirage
+est donc **pondéré** (`SPECIAL_ODDS = 50` dans `catalog.ts`) : on tire d'abord le genre — une fois
+sur cinquante, ce sera l'une d'elles — puis la piste dans son propre lot. Les épigraphes restent
+hors du tirage. N'ayant pas de numéro, ces pistes n'ont pas de rouleau : leur nom arrive avec la
+même animation que les deux cases.
+
+**La vue tient exactement l'écran** (≥ 340 × 620), téléphone compris : `.screen` fait `100svh`, la carte du lecteur
+prend ce qui reste (`flex: 1`), et ses grands chiffres se calibrent sur la hauteur de la carte
+(`cqh`, d'où `container-type: size`). En dessous de ces tailles — mobile — la page redevient un
+document qui défile. Deux pièges :
+- la règle `container-type: size` de la media query doit venir **après** `.pane { container-type:
+  inline-size }`, sinon celle-ci l'écrase (même spécificité) et `cqh` retombe sur la hauteur du
+  viewport, donc les chiffres ne rapetissent plus ;
+- les blocs fixes du lecteur (rail, minutages, commandes, écoute suivie) portent `flex: none`,
+  sinon le repère les comprime au lieu d'absorber seul le surplus.
+Seul le pied de page passe sous la ligne de flottaison : Isaure l'autorise explicitement.
+Sur téléphone, deux choses rendent la tenue possible — le repère **reste sur deux colonnes**
+(empilé, il coûtait à lui seul une demi-hauteur d'écran) et les quatre commandes secondaires
+se réduisent à leur **icône seule**, en une rangée. Leur libellé disparaît de l'écran mais pas
+de la page : `aria-label` et `title` le gardent pour les lecteurs d'écran et l'appui long, et
+« Reproduir » garde le sien — c'est la commande qu'il ne faut pas deviner.
+
+**Pied de page** : la légende du clavier, puis un colophon en deux colonnes sous un filet — les
+voix de la langue écoutée à gauche, la signature d'Isaure (lien vers isaure-lohest.com) à droite.
+Les voix sont dans `i18n.ts` (`voices`, `voiceNames`) parce qu'elles changent avec le jeu d'audios :
+CA Jeanne & Jean-Christophe Lohest, Josep-Maria Sagrera · ES Esther & Adrés Molero ·
+FR Jeanne & Jean-Christophe Lohest. La légende du clavier disparaît sous `pointer: coarse`,
+le colophon reste.
 
 **Animation du tirage** (`Reel.vue`) : une colonne de valeurs qui glisse et décélère, et non un
 texte remplacé toutes les 50 ms — c'est ce qui faisait saccader la première version. Une seule
 transition de `transform`, interpolée par le navigateur. Deux points comptent : les valeurs
 intermédiaires ont **la largeur de la valeur finale** (sinon la colonne tressaute et déborde de
-sa fenêtre), et les deux rouleaux ne se posent pas ensemble (le verset a 110 ms de retard).
+sa fenêtre), et les deux rouleaux ne se posent pas ensemble (le verset a 160 ms de retard).
+La courbe se termine au-dessus de 1, donc le rouleau dépasse d'un cran et revient : d'où les deux
+valeurs **en réserve** sous la bonne (`SPARES`) et `landAt`, qui n'est pas le dernier élément.
+Piège de performance : le flou va sur la **fenêtre** du rouleau, jamais sur la colonne — celle-ci
+fait plusieurs milliers de pixels de haut, et la tramer floue retardait le départ d'une seconde
+entière (mesuré).
 
 **Icônes** (`Icon.vue`) : dessinées à la main, pas de bibliothèque. Piège rencontré deux fois :
 sur une flèche circulaire, **la pointe se place à l'arrivée du tracé, pas à son départ**, sinon
@@ -99,7 +130,9 @@ Retirés à la demande d'Isaure, ne pas remettre sans elle :
 - le compte d'audios (« 2 809 àudios ») ;
 - la ligne « També : Preliminars / Lletanies » — le livre 0 et les litanies passent désormais
   par le tirage (voir plus haut) et par lien direct (`#ca/0/0b`, `#ca/41/0`) ;
-- l'indication « I – XL » sous le champ du livre ;
+- l'indication sous le champ du livre quand elle est redondante : le chiffre romain est déjà
+  écrit en grand au-dessus et le nombre de versets est dans la plage d'en face. Elle ne subsiste
+  que pour confirmer une saisie en chiffres arabes (« 32 » → « XXXII ») ;
 - le bouton « Obrir-ne un altre » de la barre de commandes : il appelait le même `draw()` que le
   grand bouton de tirage, qui est juste au-dessus.
 
@@ -173,6 +206,8 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
 - Traiter les audios ES : dossier reçu, `~/Downloads/Audios MR 2` (42 sous-dossiers « LIBRO I » … ).
 - Puis le français.
 - Confirmer `04000T` (la cliente doit l'écouter) ; récupérer les noms ES / FR du livre 0.
+- Faire confirmer l'orthographe de « Adrés Molero » dans les crédits ES (« Andrés » ?), et la
+  formulation « Disseny i desenvolupament » pour la signature d'Isaure.
 - Choisir l'hébergement : sous-dossier du site (ex. `louiscattiaux.com/oracle/`) avec `audio/` à côté,
   ou audios dans uploads et `VITE_AUDIO_BASE` (voir `.env.example`). Option : intégration WordPress par iframe.
 - Rien n'est en ligne : aucune mise en ligne sans l'accord d'Isaure.

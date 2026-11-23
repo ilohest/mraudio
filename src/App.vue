@@ -98,17 +98,18 @@ onMounted(() => addEventListener('keydown', onKey))
 
 <template>
   <div class="page">
-    <header class="card cream masthead">
-      <div class="idbar">
-        <p class="imprint">{{ t.author }}</p>
-        <LangSwitch />
-      </div>
-      <h1 class="title">{{ t.work }}</h1>
-    </header>
+    <div class="screen">
+      <header class="card cream masthead">
+        <div class="idbar">
+          <p class="imprint">{{ t.author }}</p>
+          <LangSwitch />
+        </div>
+        <h1 class="title">{{ t.work }}</h1>
+      </header>
 
-    <DrawBar v-if="catalog" @draw="draw" />
+      <DrawBar v-if="catalog" @draw="draw" />
 
-    <main ref="stage" class="card pane">
+      <main ref="stage" class="card pane">
       <NowPlaying
         v-if="catalog"
         :key="`${lang}-${player.track.value?.id ?? 'buit'}`"
@@ -123,14 +124,41 @@ onMounted(() => addEventListener('keydown', onKey))
         @chain="(c) => (chain = c)"
         @pick="(tr) => open(tr)"
       />
-      <p v-else class="soon">{{ t.soon }}</p>
-    </main>
+        <p v-else class="soon">{{ t.soon }}</p>
+      </main>
+    </div>
 
-    <!-- Légende du clavier : la touche dessinée comme une touche, puis ce qu'elle fait. -->
     <footer class="foot">
-      <span class="item"><kbd>{{ t.keySpace }}</kbd>{{ t.keyPlay }}</span>
-      <span class="item"><kbd>←</kbd><kbd>→</kbd>{{ t.keyVerse }}</span>
-      <span class="item"><kbd>R</kbd>{{ t.keyDraw }}</span>
+      <!-- Légende du clavier : la touche dessinée comme une touche, puis ce qu'elle fait. -->
+      <p class="keys">
+        <span class="item"><kbd>{{ t.keySpace }}</kbd>{{ t.keyPlay }}</span>
+        <span class="item"><kbd>←</kbd><kbd>→</kbd>{{ t.keyVerse }}</span>
+        <span class="item"><kbd>R</kbd>{{ t.keyDraw }}</span>
+      </p>
+
+      <!-- Colophon : les voix de la langue écoutée, et la signature. -->
+      <div class="colophon">
+        <p v-if="catalog" class="credit">
+          <span class="tag">{{ t.voices }}</span>
+          <span class="names">{{ t.voiceNames }}</span>
+        </p>
+        <p class="credit end">
+          <span class="tag">{{ t.madeBy }}</span>
+          <a class="link" href="https://isaure-lohest.com/" target="_blank" rel="noopener noreferrer">
+            Isaure Lohest
+            <svg class="out" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M7.5 16.5 16.5 7.5M9.6 7.5h6.9v6.9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+        </p>
+      </div>
     </footer>
   </div>
 </template>
@@ -138,10 +166,14 @@ onMounted(() => addEventListener('keydown', onKey))
 <style scoped>
 .page {
   min-height: 100svh;
-  padding: var(--gap);
+  display: flex;
+  flex-direction: column;
+}
+.screen {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
+  padding: var(--gap);
 }
 
 /* La carte crème : la une. Tout le reste est gris. */
@@ -160,11 +192,11 @@ onMounted(() => addEventListener('keydown', onKey))
 
 /* Le titre en Ortica Light : la seule chose qui occupe vraiment la page. */
 .title {
-  margin: clamp(44px, 9vw, 120px) 0 0;
+  margin: clamp(22px, min(7vw, 5.6svh), 84px) 0 0;
   max-width: 20ch;
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(2.7rem, 10vw, 7rem);
+  font-size: clamp(2.3rem, min(10vw, 9svh), 7rem);
   line-height: 1;
   letter-spacing: -0.022em;
   animation: settle 0.7s cubic-bezier(0.22, 1, 0.3, 1) both;
@@ -177,6 +209,21 @@ onMounted(() => addEventListener('keydown', onKey))
 /* La carte mesure sa propre largeur : les tailles internes sont en cqi. */
 .pane { container-type: inline-size; }
 
+/* Dès qu'il y a la place, la vue tient exactement dans la hauteur de l'écran : la carte
+   du lecteur absorbe ce qui reste, et ses grands chiffres se calibrent dessus (cqh).
+   Seule la légende du clavier passe sous la ligne de flottaison — Isaure l'autorise.
+   Vaut aussi sur téléphone : c'est pour ça que le repère reste sur deux colonnes et que les
+   commandes secondaires y perdent leur libellé. Sur un écran vraiment court, la page redevient
+   un document qui défile. */
+@media (min-width: 340px) and (min-height: 620px) {
+  .screen { height: 100svh; }
+  .pane {
+    flex: 1 1 auto;
+    min-height: 0;
+    container-type: size;
+  }
+}
+
 .soon {
   margin: 0;
   padding: var(--pad);
@@ -186,19 +233,61 @@ onMounted(() => addEventListener('keydown', onKey))
 }
 
 .foot {
-  margin-top: auto;
+  padding: 12px var(--gap) calc(var(--gap) + 8px);
+  font: 400 0.84rem/1.45 var(--sans);
+  color: var(--dim);
+}
+.keys {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px 24px;
-  padding: 6px 6px 2px;
-  font: 400 0.84rem/1.4 var(--sans);
-  color: var(--dim);
+  margin: 0 0 16px;
 }
 .item {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+}
+
+/* Colophon : deux colonnes sous un filet, l'intitulé en gris, le nom en encre. */
+.colophon {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px 40px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+}
+.credit {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+.credit.end {
+  margin-left: auto;
+  text-align: right;
+  justify-items: end;
+}
+.tag { font-size: 0.78rem; }
+.names { color: var(--ink); }
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.link:hover { color: var(--rubric-deep); border-bottom-color: var(--rubric-deep); }
+.link:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 3px; }
+.out {
+  width: 0.9em;
+  height: 0.9em;
+  flex: none;
 }
 /* Le filet du bas donne le relief d'une touche, sans ombre portée. */
 kbd {
@@ -214,8 +303,8 @@ kbd {
   border-radius: 5px;
 }
 
-/* Sans clavier, la légende n'a rien à dire. */
+/* Sans clavier, la légende n'a rien à dire ; le colophon, lui, reste. */
 @media (pointer: coarse) {
-  .foot { display: none; }
+  .keys { display: none; }
 }
 </style>
