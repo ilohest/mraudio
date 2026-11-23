@@ -156,6 +156,11 @@ et l'écoute suivie passent sur deux rangées chacune : il faut 790 px de haut p
 la place au repère. En dessous, la page défile. Mesuré : à 375 × 667 le repère ne recevait que
 52 px, sa taille calculée devenait négative, et le rail venait se superposer aux chiffres.
 
+**Rappel de la carte à l'écran** (`open()` dans `App.vue`) : il ne se déclenche que si la carte
+est **entièrement** sortie de l'écran. La première version la recentrait dès qu'elle dépassait du
+bas — sur téléphone, où la carte est plus haute que l'écran, chaque tirage faisait donc défiler
+la page sous les doigts.
+
 Détails à ne pas casser :
 - **Le tirage est l'action principale** : pleine largeur, imprimée en plein, juste sous le titre,
   grande cible, gros corps. Le public visé est âgé — ne jamais le reléguer dans une colonne,

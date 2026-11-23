@@ -18,11 +18,14 @@ function open(tr: Track, opts: { drawn?: boolean; autoplay?: boolean } = {}) {
   drawn.value = !!opts.drawn
   player.load(tr, catalog.value.url(tr), opts.autoplay ?? true)
   history.replaceState(null, '', `#${lang.value}/${tr.book}/${tr.verse}${tr.part}`)
+  /* On ne ramène la carte à l'écran que si elle en est entièrement sortie. La version
+     précédente la recentrait dès qu'elle dépassait du bas : sur téléphone, où la carte est
+     plus haute que l'écran, chaque tirage faisait défiler la page sous les doigts. */
   nextTick(() => {
     const el = stage.value
     if (!el) return
     const r = el.getBoundingClientRect()
-    if (r.top < 0 || r.bottom > innerHeight) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (r.bottom <= 0 || r.top >= innerHeight) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   })
 }
 
