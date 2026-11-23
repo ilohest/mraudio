@@ -47,6 +47,10 @@ dessous. Il n'y a plus de composant `VersePicker` — il faisait doublon avec le
   d'indication en dessous sont ce qui le fait lire comme un formulaire. Ne pas les retirer.
 - Le bouton « Escoltar » n'apparaît que si la saisie ne décrit plus ce qui joue (`dirty`), ou si
   rien ne joue. Il se déplie par `grid-template-rows: 0fr → 1fr`.
+- **Quand il se déplie alors qu'un verset joue**, la carte est déjà pleine : le repère doit céder
+  la place (classe `editing` sur `.now`, qui réduit sa taille et ses marges). Sans ça le repère
+  est comprimé sous sa propre hauteur, son contenu déborde de sa case et le bouton se dessine
+  par-dessus les chiffres — le bug signalé le 23/11/2026.
 - Les préliminaires, les litanies et les épigraphes n'ont pas de numéro : leur nom s'affiche
   au-dessus des champs, laissés vides.
 

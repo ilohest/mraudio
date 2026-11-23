@@ -141,6 +141,13 @@ const dirty = computed(() => {
   return book.value !== tr.book || (raw === '' ? 0 : parseInt(raw, 10)) !== tr.verse
 })
 const asking = computed(() => !props.track || dirty.value)
+/**
+ * Saisie en cours pendant qu'un verset joue : le bouton « Escoltar » se déplie alors que la
+ * carte est déjà pleine. Sans rien céder, le repère serait comprimé sous sa propre hauteur et
+ * le bouton se dessinerait par-dessus les chiffres. On rend donc la place en réduisant le
+ * repère — ce qui tombe bien : à cet instant, c'est l'action qui compte, pas le repère.
+ */
+const editing = computed(() => !!props.track && dirty.value)
 
 /** Collage « VII 56 », « 7,56 », « 07056 » dans le champ livre → répartit les deux champs. */
 function splitCombined() {
@@ -241,7 +248,7 @@ const chainOpts = computed(() => [
 </script>
 
 <template>
-  <article class="now">
+  <article class="now" :class="{ editing }">
     <p v-if="standing" class="standing">
       <span v-if="standing.kicker" class="micro">{{ standing.kicker }}</span>
       <span class="name">{{ standing.name }}</span>
@@ -505,6 +512,15 @@ const chainOpts = computed(() => [
 /* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
 .mega.len-l { font-size: clamp(1.9rem, min(11.5cqi, 22cqh), 6.4rem); }
 .mega.len-xl { font-size: clamp(1.5rem, min(9cqi, 17.5cqh), 5rem); }
+
+/* Pendant la saisie, le repère cède la place au bouton. */
+.now.editing .slot {
+  padding-top: calc(var(--pad) * 0.5);
+  padding-bottom: calc(var(--pad) * 0.5);
+}
+.now.editing .mega { font-size: clamp(1.9rem, min(12cqi, 17cqh), 5.5rem); }
+.now.editing .mega.len-l { font-size: clamp(1.7rem, min(10cqi, 14cqh), 4.6rem); }
+.now.editing .mega.len-xl { font-size: clamp(1.4rem, min(8cqi, 11cqh), 3.8rem); }
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }
 .hint { font-size: 0.8rem; }
