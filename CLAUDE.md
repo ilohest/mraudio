@@ -309,6 +309,17 @@ Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même d
 R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
 les sortir ailleurs.
 
+**Page 404** (`src/404.template.html`, assemblée par `scripts/deploy.mjs`) : « Livre 0 ·
+Verset 404 », dans la mise en page du repère de l'application. Deux contraintes l'ont
+dessinée :
+- elle est servie à **n'importe quelle** adresse inconnue, y compris sous un chemin profond où
+  les liens relatifs ne résoudraient pas. Elle est donc **autonome** : style en ligne, fonte
+  Ortica embarquée en base64, icône reprise d'`index.html`. 40 Ko, zéro requête ;
+- elle ne doit pas répéter son texte en trois langues. Les trois sont dans le fichier, mais un
+  script n'en montre qu'une : la préférence enregistrée par l'application (`mr-lang`), sinon la
+  langue du navigateur, sinon le catalan — qui est écrit en dur dans le HTML, de sorte que sans
+  JavaScript la page garde un sens au lieu de se vider.
+
 **En ligne depuis le 23/11/2026 : <https://mraudio.app>**, sur le compte personnel d'Isaure.
 Le premier envoi a pris 9 min 30 pour 5 619 fichiers ; les suivants ne transmettent que ce qui
 a changé (quelques secondes). Brancher le domaine **désactive l'adresse `workers.dev`** : il n'y

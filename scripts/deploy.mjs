@@ -9,7 +9,10 @@
  * Sans --audio : le dossier `audio-web` du projet, sinon celui que désigne le lien
  * symbolique public/audio/ca utilisé en développement.
  */
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, rmSync, statSync } from 'node:fs'
+import {
+  cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync,
+  realpathSync, rmSync, statSync, writeFileSync,
+} from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -42,6 +45,20 @@ if (build.status !== 0) process.exit(build.status ?? 1)
 rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
 cpSync(join(root, 'dist'), out, { recursive: true })
+
+/**
+ * La page 404 est servie à la place de n'importe quelle adresse inconnue, y compris sous un
+ * chemin profond où les liens relatifs ne résoudraient pas. On l'assemble donc en un seul
+ * fichier : la fonte d'affichage et l'icône y sont embarquées, elle ne demande rien d'autre.
+ */
+const gabarit = join(root, 'src', '404.template.html')
+if (existsSync(gabarit)) {
+  const fonte = readFileSync(join(root, 'src', 'assets', 'fonts', 'OrticaLinear-Light.woff2')).toString('base64')
+  const icone = readFileSync(join(root, 'index.html'), 'utf8').match(/<link rel="icon" href="([^"]+)"/)?.[1] ?? ''
+  const page = readFileSync(gabarit, 'utf8').replace('{{FONT_ORTICA}}', fonte).replace('{{FAVICON}}', icone)
+  writeFileSync(join(out, '404.html'), page)
+  console.log(`  404.html : ${(page.length / 1024).toFixed(0)} Ko, autonome`)
+}
 
 const langues = readdirSync(audio).filter((d) => /^[a-z]{2}$/.test(d) && statSync(join(audio, d)).isDirectory())
 if (!langues.length) {

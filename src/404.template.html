@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="robots" content="noindex" />
+    <title>404 — El Missatge Retrobat</title>
+    <link rel="icon" href="{{FAVICON}}" />
+    <style>
+      /*
+       * Cette page doit tenir toute seule : elle est servie à la place de n'importe quelle
+       * adresse inconnue, y compris sous un chemin profond, où les liens relatifs vers les
+       * ressources du site ne résoudraient pas. D'où la fonte embarquée et le style en ligne.
+       */
+      @font-face {
+        font-family: 'Ortica Linear';
+        src: url(data:font/woff2;base64,{{FONT_ORTICA}}) format('woff2');
+        font-weight: 300;
+        font-style: normal;
+        font-display: swap;
+      }
+      :root {
+        --bg: #ffffff;
+        --card: #f2f1f0;
+        --cream: #fff5bb;
+        --ink: #222222;
+        --dim: #6e6e6b;
+        --line: rgb(34 34 34 / 0.16);
+        --rubric: #e27960;
+        --serif: 'Ortica Linear', 'Iowan Old Style', Georgia, serif;
+        --r: 12px;
+        --gap: 16px;
+        --pad: clamp(18px, 2.6vw, 30px);
+        color-scheme: light;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--gap);
+        padding: var(--gap);
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--serif);
+        -webkit-font-smoothing: antialiased;
+      }
+      .card {
+        background: var(--card);
+        border-radius: var(--r);
+        overflow: hidden;
+      }
+      /* Le même repère que dans l'application : un livre qui n'existe pas, verset 404. */
+      .hero { display: grid; grid-template-columns: 1fr 1fr; }
+      .slot { position: relative; padding: var(--pad); min-width: 0; }
+      .slot + .slot::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: var(--pad);
+        bottom: var(--pad);
+        width: 1px;
+        background: var(--line);
+      }
+      .label { margin: 0; font: 300 0.86rem/1.35 var(--serif); letter-spacing: 0.02em; color: var(--dim); }
+      .num {
+        margin: 10px 0 0;
+        font-weight: 300;
+        font-size: clamp(3rem, 15vw, 8.5rem);
+        line-height: 1.05;
+        letter-spacing: -0.012em;
+        white-space: nowrap;
+      }
+      .num.accent { color: var(--rubric); }
+      .says {
+        margin: 0;
+        padding: var(--pad);
+        border-top: 1px solid var(--line);
+        font: 300 clamp(1rem, 2.4vw, 1.2rem)/1.5 var(--serif);
+      }
+      .home {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        align-self: start;
+        margin: 0 var(--gap);
+        padding: 16px 22px;
+        border-radius: var(--r);
+        background: var(--ink);
+        color: var(--bg);
+        text-decoration: none;
+        font: 300 1.05rem/1 var(--serif);
+        transition: background 0.22s ease, transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1);
+      }
+      .home:hover { background: var(--rubric); transform: translateY(-3px); }
+      .home svg { width: 1.1em; height: 1.1em; flex: none; }
+      @media (max-width: 620px) {
+        .hero { grid-template-columns: 1fr; }
+        .slot + .slot::before { left: var(--pad); right: var(--pad); top: 0; bottom: auto; width: auto; height: 1px; }
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="hero">
+        <div class="slot">
+          <p class="label" data-dit="book">Llibre</p>
+          <p class="num">0</p>
+        </div>
+        <div class="slot">
+          <p class="label" data-dit="verse">Verset</p>
+          <p class="num accent">404</p>
+        </div>
+      </div>
+      <p class="says" data-dit="says">Aquest verset no és al llibre.</p>
+    </main>
+
+    <a class="home" href="/">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.2 12H3.8" /><path d="M9.8 6 3.8 12l6 6" />
+      </svg>
+      <span data-dit="home">Inici</span>
+    </a>
+
+    <script>
+      /*
+       * Une seule langue à l'écran, pas trois. La page est servie telle quelle à n'importe
+       * quelle adresse, donc elle ne peut pas savoir d'avance qui la lit : elle reprend la
+       * préférence que l'application a enregistrée, sinon la langue du navigateur. Le
+       * catalan est déjà écrit dans le HTML — sans JavaScript, c'est lui qui reste, et la
+       * page garde un sens.
+       */
+      ;(function () {
+        var T = {
+          ca: { book: 'Llibre', verse: 'Verset', says: 'Aquest verset no és al llibre.', home: 'Inici' },
+          es: { book: 'Libro', verse: 'Versículo', says: 'Este versículo no está en el libro.', home: 'Inicio' },
+          fr: { book: 'Livre', verse: 'Verset', says: 'Ce verset n\u2019est pas dans le livre.', home: 'Accueil' }
+        }
+        var l = null
+        try { var s = localStorage.getItem('mr-lang'); if (T[s]) l = s } catch (e) { /* stockage indisponible */ }
+        if (!l) { var n = (navigator.language || 'ca').slice(0, 2); l = T[n] ? n : 'ca' }
+        document.documentElement.lang = l
+        var els = document.querySelectorAll('[data-dit]')
+        for (var i = 0; i < els.length; i++) els[i].textContent = T[l][els[i].getAttribute('data-dit')]
+      })()
+    </script>
+  </body>
+</html>

@@ -4,7 +4,9 @@
   "name": "mraudio",
   "compatibility_date": "2025-11-01",
   "assets": {
-    "directory": "./deploy"
+    "directory": "./deploy",
+    // Toute adresse inconnue reçoit 404.html, avec le code 404.
+    "not_found_handling": "404-page"
   },
   // Domaine personnalisé : Cloudflare crée l'enregistrement DNS lui-même, à condition que la
   // zone mraudio.app soit dans le même compte que le Worker.
