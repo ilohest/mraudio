@@ -513,7 +513,9 @@ const chainOpts = computed(() => [
    * commandes compris : le contenu débordait de sa case, se centrait, et venait coller au rail.
    */
   --around: calc(2 * var(--pad) + 3.8rem);
-  --fit: calc((100cqh - var(--around)) / 1.12);
+  /* Le plancher évite qu'une hauteur trop courte ne rende la valeur négative : la taille
+     deviendrait invalide et le repère se replierait sur lui-même. */
+  --fit: max(1.4rem, calc((100cqh - var(--around)) / 1.12));
   /* Taille de référence des deux cases. Elle est portée par le repère, pas par chaque
      champ : la hauteur des boîtes en dépend, et c'est ce qui garde les filets alignés
      même quand une case écrit un mot au lieu d'un nombre. */
@@ -529,7 +531,8 @@ const chainOpts = computed(() => [
  * Dans ce cas `--fit` retombe sur la hauteur du viewport, assez grande pour ne jamais
  * commander, et c'est la largeur qui décide.
  */
-@media (min-width: 340px) and (min-height: 620px) {
+/* ⚠ Même condition que dans App.vue : les deux doivent rester d'accord. */
+@media (min-width: 720px) and (min-height: 620px), (max-width: 719px) and (min-height: 790px) {
   .now:not(.idle) .hero { container-type: size; }
 }
 .hero.shaking { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
@@ -636,7 +639,9 @@ input.mega { height: calc(var(--num) * 1.12); }
     background 0.2s ease,
     color 0.2s ease;
 }
-.go:hover { background: var(--rubric); border-color: var(--rubric); transform: translateY(-3px); }
+@media (hover: hover) {
+  .go:hover { background: var(--rubric); border-color: var(--rubric); transform: translateY(-3px); }
+}
 .go:active { transform: scale(0.98); }
 .go:focus-visible { outline: 3px solid var(--rubric-deep); outline-offset: 3px; }
 
@@ -684,8 +689,12 @@ input.mega { height: calc(var(--num) * 1.12); }
   transform: scale(0);
   transition: transform 0.3s cubic-bezier(0.34, 1.7, 0.64, 1);
 }
-.scrub:hover .rail, .scrub:focus-visible .rail, .scrub.live .rail { height: 9px; }
-.scrub:hover .knob, .scrub:focus-visible .knob { transform: scale(1); }
+.scrub:focus-visible .rail, .scrub.live .rail { height: 9px; }
+.scrub:focus-visible .knob { transform: scale(1); }
+@media (hover: hover) {
+  .scrub:hover .rail { height: 9px; }
+  .scrub:hover .knob { transform: scale(1); }
+}
 .scrub.live .knob { transform: scale(1.35); }
 .scrub:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: -4px; border-radius: var(--r-sm); }
 .scrub.busy .rail::after {
@@ -741,11 +750,17 @@ input.mega { height: calc(var(--num) * 1.12); }
     color 0.2s ease,
     border-color 0.2s ease;
 }
-.controls button:hover:not(:disabled) {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
-  transform: translateY(-2px);
+/* Sur un écran tactile, l'état de survol se colle après un appui et n'en repart plus :
+   le bouton reste allumé. Tout ce qui réagit au survol est donc réservé aux pointeurs
+   qui survolent vraiment. L'appui, lui, garde son retour par :active. */
+@media (hover: hover) {
+  .controls button:hover:not(:disabled) {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--bg);
+    transform: translateY(-2px);
+  }
+  .controls .primary:hover:not(:disabled) { background: var(--rubric); border-color: var(--rubric); }
 }
 .controls button:active:not(:disabled) { transform: scale(0.96); }
 .controls button:disabled { color: var(--dim); background: transparent; cursor: default; }
@@ -759,7 +774,6 @@ input.mega { height: calc(var(--num) * 1.12); }
   border-color: var(--ink);
   color: var(--bg);
 }
-.controls .primary:hover:not(:disabled) { background: var(--rubric); border-color: var(--rubric); }
 .controls .primary:disabled { background: transparent; border-color: var(--line); }
 .controls .primary.pulse { animation: pop 0.42s cubic-bezier(0.34, 1.6, 0.64, 1); }
 @keyframes pop {
@@ -794,7 +808,9 @@ input.mega { height: calc(var(--num) * 1.12); }
     color 0.2s ease,
     border-color 0.2s ease;
 }
-.opts button:hover { color: var(--ink); border-color: var(--ink); transform: translateY(-2px); }
+@media (hover: hover) {
+  .opts button:hover { color: var(--ink); border-color: var(--ink); transform: translateY(-2px); }
+}
 .opts button:active { transform: scale(0.95); }
 .opts button.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .opts button:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }

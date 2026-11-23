@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: 'Ortica Linear';
+        src: url('assets/fonts/OrticaLinear-Light.woff2') format('woff2');
+        font-weight: 300;
+      }
+      @font-face {
+        font-family: 'Ronzino';
+        src: url('assets/fonts/Ronzino-Regular.woff2') format('woff2');
+        font-weight: 400;
+      }
+      * { margin: 0; box-sizing: border-box; }
+      body {
+        width: 1200px;
+        height: 630px;
+        display: flex;
+        align-items: center;
+        gap: 56px;
+        padding: 72px 80px;
+        background: #fff5bb;
+        color: #222222;
+        font-family: 'Ortica Linear', Georgia, serif;
+        font-weight: 300;
+        -webkit-font-smoothing: antialiased;
+      }
+      .texte { flex: 1; min-width: 0; }
+      .auteur {
+        font-family: 'Ronzino', sans-serif;
+        font-size: 30px;
+        letter-spacing: 0.01em;
+        color: rgb(34 34 34 / 0.62);
+      }
+      /* Les trois titres empilés : le site est trilingue, l'aperçu le dit sans le répéter. */
+      .titres { margin-top: 44px; }
+      .titres p { font-size: 78px; line-height: 1.08; letter-spacing: -0.022em; }
+      .titres p + p { color: rgb(34 34 34 / 0.42); font-size: 54px; line-height: 1.18; }
+      .titres p:nth-child(2) { margin-top: 18px; }
+      .pied {
+        margin-top: 48px;
+        padding-top: 26px;
+        border-top: 1px solid rgb(34 34 34 / 0.22);
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+        font-family: 'Ronzino', sans-serif;
+        font-size: 28px;
+        color: rgb(34 34 34 / 0.62);
+      }
+      .pied b { font-weight: 400; color: #222222; }
+      .marque { flex: none; width: 232px; height: 232px; }
+    </style>
+  </head>
+  <body>
+    <div class="texte">
+      <p class="auteur">Louis Cattiaux</p>
+      <div class="titres">
+        <p>El Missatge Retrobat</p>
+        <p>El Mensaje Reencontrado</p>
+        <p>Le Message Retrouvé</p>
+      </div>
+      <p class="pied"><b>mraudio.app</b> <span>5 615 enregistraments</span></p>
+    </div>
+
+    <!-- La même oreille que l'icône du site. -->
+    <svg class="marque" viewBox="0 0 32 32" fill="none" stroke="#222222" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 13.5a6.8 6.8 0 1 1 13.6 0c0 5.6-5.6 6-5.6 9.9a3.5 3.5 0 1 1-7 0" />
+      <path d="M19.6 13.5a3 3 0 0 0-6 0v1.4a2.4 2.4 0 1 1 0 4.8" />
+    </svg>
+  </body>
+</html>

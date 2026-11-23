@@ -145,6 +145,17 @@ qu'il sépare. Le bouton « Escoltar » y est en plein, comme le tirage.
 ce qu'elle fait. Elle disparaît sous `@media (pointer: coarse)` : sans clavier, elle n'a rien à
 dire. L'ancienne ligne « Espai · lectura ←→ · verset R · atzar » était illisible.
 
+**Survol et écran tactile** : toute règle `:hover` est enfermée dans `@media (hover: hover)`.
+Sur un téléphone, l'état de survol se colle après un appui et n'en repart plus — le bouton reste
+allumé, ce qu'Isaure a vu sur le tirage et sur « Reproduir ». L'appui garde son retour par
+`:active`. **Ne jamais écrire un `:hover` hors de cette garde.**
+
+**Seuil d'ajustement à l'écran** : il dépend de la largeur, et la condition est écrite deux fois
+— `App.vue` et `NowPlaying.vue` — qui doivent rester d'accord. Sur un écran étroit, les commandes
+et l'écoute suivie passent sur deux rangées chacune : il faut 790 px de haut pour qu'il reste de
+la place au repère. En dessous, la page défile. Mesuré : à 375 × 667 le repère ne recevait que
+52 px, sa taille calculée devenait négative, et le rail venait se superposer aux chiffres.
+
 Détails à ne pas casser :
 - **Le tirage est l'action principale** : pleine largeur, imprimée en plein, juste sous le titre,
   grande cible, gros corps. Le public visé est âgé — ne jamais le reléguer dans une colonne,
@@ -308,6 +319,14 @@ octet consommé, ce qui compte sur un disque serré. Il les prend dans `audio-we
 Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même domaine : pas de
 R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
 les sortir ailleurs.
+
+**Aperçu de partage** : `src/og.template.html` → `src/assets/og.png` (1200 × 630), fabriquée par
+`node scripts/og.mjs` via Chrome sans interface — seul moyen sûr d'avoir les vraies fontes et des
+dimensions exactes. **L'image est versionnée** pour qu'un déploiement n'ait jamais besoin de
+Chrome. Les trois titres y sont empilés : le site est trilingue, l'aperçu le dit sans le répéter.
+Les adresses des balises sont **absolues** (`https://mraudio.app/og.png`) : un aperçu est fabriqué
+par un serveur distant, qui ne sait pas d'où la page a été servie. Changer de domaine oblige donc
+à les reprendre dans `index.html`.
 
 **Page 404** (`src/404.template.html`, assemblée par `scripts/deploy.mjs`) : « Livre 0 ·
 Verset 404 », dans la mise en page du repère de l'application. Deux contraintes l'ont

@@ -51,6 +51,10 @@ cpSync(join(root, 'dist'), out, { recursive: true })
  * chemin profond où les liens relatifs ne résoudraient pas. On l'assemble donc en un seul
  * fichier : la fonte d'affichage et l'icône y sont embarquées, elle ne demande rien d'autre.
  */
+// L'image d'aperçu est versionnée : la refaire demande Chrome (voir scripts/og.mjs).
+const og = join(root, 'src', 'assets', 'og.png')
+if (existsSync(og)) cpSync(og, join(out, 'og.png'))
+
 const gabarit = join(root, 'src', '404.template.html')
 if (existsSync(gabarit)) {
   const fonte = readFileSync(join(root, 'src', 'assets', 'fonts', 'OrticaLinear-Light.woff2')).toString('base64')

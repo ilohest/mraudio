@@ -213,9 +213,14 @@ onMounted(() => addEventListener('keydown', onKey))
    du lecteur absorbe ce qui reste, et ses grands chiffres se calibrent dessus (cqh).
    Seule la légende du clavier passe sous la ligne de flottaison — Isaure l'autorise.
    Vaut aussi sur téléphone : c'est pour ça que le repère reste sur deux colonnes et que les
-   commandes secondaires y perdent leur libellé. Sur un écran vraiment court, la page redevient
-   un document qui défile. */
-@media (min-width: 340px) and (min-height: 620px) {
+   commandes secondaires y perdent leur libellé.
+
+   Le seuil n'est pas le même selon la largeur. Sur un écran étroit, les commandes et l'écoute
+   suivie passent sur deux rangées chacune : il faut 790 px de haut pour qu'il reste de la place
+   au repère. En dessous, la page redevient un document qui défile — mieux vaut faire défiler
+   que d'écraser le repère jusqu'à ce que son contenu déborde.
+   ⚠ La même condition est répétée dans NowPlaying.vue : les deux doivent rester d'accord. */
+@media (min-width: 720px) and (min-height: 620px), (max-width: 719px) and (min-height: 790px) {
   .screen { height: 100svh; }
   .pane {
     flex: 1 1 auto;
@@ -294,7 +299,9 @@ onMounted(() => addEventListener('keydown', onKey))
   padding-bottom: 2px;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
-.link:hover { color: var(--rubric-deep); border-bottom-color: var(--rubric-deep); }
+@media (hover: hover) {
+  .link:hover { color: var(--rubric-deep); border-bottom-color: var(--rubric-deep); }
+}
 .link:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 3px; }
 .out {
   width: 0.9em;

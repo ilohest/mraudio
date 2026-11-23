@@ -58,8 +58,13 @@ function onClick() {
   transition: transform 0.34s cubic-bezier(0.34, 1.5, 0.64, 1);
 }
 
-.draw:hover:not(:disabled) { background: var(--rubric); transform: translateY(-3px); }
-.draw:hover:not(:disabled) .arrow { transform: translateX(16px); }
+/* Sur un écran tactile, l'état de survol se colle après un appui et n'en repart plus :
+   le bouton reste allumé. Tout ce qui réagit au survol est donc réservé aux pointeurs
+   qui survolent vraiment. L'appui, lui, garde son retour par :active. */
+@media (hover: hover) {
+  .draw:hover:not(:disabled) { background: var(--rubric); transform: translateY(-3px); }
+  .draw:hover:not(:disabled) .arrow { transform: translateX(16px); }
+}
 .draw:active:not(:disabled) { transform: scale(0.985); }
 .draw.firing { animation: fire 0.42s cubic-bezier(0.34, 1.6, 0.64, 1); }
 .draw.firing .arrow { animation: fly 0.42s cubic-bezier(0.34, 1.6, 0.64, 1); }

@@ -89,7 +89,12 @@ body {
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.btn:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+/* Sur un écran tactile, l'état de survol se colle après un appui et n'en repart plus :
+   le bouton reste allumé. Tout ce qui réagit au survol est donc réservé aux pointeurs
+   qui survolent vraiment. L'appui, lui, garde son retour par :active. */
+@media (hover: hover) {
+  .btn:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+}
 .btn:disabled { color: var(--dim); background: transparent; cursor: default; }
 .btn:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
 

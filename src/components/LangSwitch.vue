@@ -36,7 +36,9 @@ button {
     background 0.2s ease,
     opacity 0.2s ease;
 }
-button:hover { opacity: 1; transform: translateY(-1px); }
+@media (hover: hover) {
+  button:hover { opacity: 1; transform: translateY(-1px); }
+}
 button:active { transform: scale(0.94); }
 button.on { background: var(--bg); opacity: 1; }
 button:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
