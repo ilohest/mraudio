@@ -145,7 +145,11 @@ Retirés à la demande d'Isaure, ne pas remettre sans elle :
 
 ## Structure
 - `src/lib/catalog.ts` — charge `src/data/manifest.<lang>.json` (embarqués au build), URL audio, voisins, tirage.
-- `src/lib/i18n.ts` — textes CA/ES/FR, langue via hash > localStorage > navigateur.
+- `src/lib/i18n.ts` — textes CA/ES/FR. La langue vient du hash, sinon de `localStorage`
+  (`mr-lang`, écrit à chaque clic sur le sélecteur), sinon de la langue du navigateur.
+  Arriver par un lien partagé affiche bien la langue du lien **sans** écraser la préférence
+  enregistrée : un visiteur français qui ouvre un lien catalan retrouve le français à sa
+  prochaine visite sur l'adresse nue. C'est voulu.
 - `src/lib/labels.ts` — libellés (Llibre VII · Verset 56, Epígrafs, Preliminars, Lletanies).
 - `src/composables/usePlayer.ts` — un seul `Audio()` global, état réactif.
 - `src/components/` — DrawBar (le gros bouton de tirage), NowPlaying (repère saisissable + lecteur
