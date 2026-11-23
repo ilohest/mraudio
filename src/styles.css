@@ -1,0 +1,46 @@
+:root {
+  --paper: #f1e9d8;
+  --paper-2: #f6f0e3;
+  --ink: #2f291f;
+  --muted: #7a6c55;
+  --line: rgb(47 41 31 / 0.15);
+  --gold: #b48a4a;
+  --rust: #9a4a2c;
+  --serif: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
+  --sans: 'Jost', 'Avenir Next', 'Helvetica Neue', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  font-family: var(--serif);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgb(255 255 255 / 0.65), transparent 60%),
+    radial-gradient(900px 700px at 50% 120%, rgb(180 138 74 / 0.12), transparent 60%),
+    var(--paper);
+  min-height: 100svh;
+}
+
+/* Grain de papier très léger. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .27 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+#app { position: relative; }
+
+::selection { background: rgb(180 138 74 / 0.3); }
