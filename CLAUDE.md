@@ -333,9 +333,10 @@ sait ni quel verset passe ni comment l'arrêter sans rallumer. Les vignettes son
 Vite (donc hachées) et leur adresse est rendue absolue — le système les charge hors de la page.
 
 **L'oreille** apparaît à trois endroits, toujours le même tracé : le favicon (`index.html`),
-l'image de partage (`src/og.template.html`) et la une (`App.vue`), où elle répond au titre sur
-la même ligne de fond. Posée en `flex-end` à côté du titre, elle n'ajoute **aucune hauteur** à
-la une — ce qui compte, c'est le bloc le plus coûteux sur un téléphone.
+l'image de partage (`src/og.template.html`) et la vignette du lecteur (`src/mr.template.html`),
+au-dessus des lettres « MR ». **Pas dans le site lui-même** : je l'avais posée dans la une, à
+côté du titre, Isaure l'a fait retirer. Elle la veut dans le lecteur du téléphone, pas sur la
+page.
 
 **Images** : `node scripts/images.mjs` refait l'aperçu de partage et les vignettes du lecteur.
 Elles sont versionnées pour qu'un déploiement n'ait jamais besoin de Chrome.

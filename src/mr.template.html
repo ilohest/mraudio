@@ -9,30 +9,39 @@
         font-weight: 300;
       }
       * { margin: 0; }
-      /* Vignette du lecteur système : un carré plein, lisible réduit à 64 px sur un écran
-         verrouillé. D'où les deux lettres seules, très grandes, sans rien autour. */
+      /* Vignette du lecteur système : un carré plein, qui doit encore se lire réduit à 64 px
+         sur un écran verrouillé. L'oreille au-dessus des deux lettres, rien d'autre : à cette
+         taille la silhouette porte plus que le texte. */
       body {
         width: 512px;
         height: 512px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 10px;
         background: #fff5bb;
         color: #222222;
         font-family: 'Ortica Linear', Georgia, serif;
         font-weight: 300;
         -webkit-font-smoothing: antialiased;
       }
+      svg { width: 252px; height: 252px; }
       p {
-        font-size: 268px;
+        font-size: 148px;
         line-height: 1;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.015em;
         /* La fonte porte ses propres approches : on recale optiquement le bloc. */
-        transform: translate(6px, -10px);
+        transform: translateX(3px);
       }
     </style>
   </head>
   <body>
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 13.5a6.8 6.8 0 1 1 13.6 0c0 5.6-5.6 6-5.6 9.9a3.5 3.5 0 1 1-7 0" />
+      <path d="M19.6 13.5a3 3 0 0 0-6 0v1.4a2.4 2.4 0 1 1 0 4.8" />
+    </svg>
     <p>MR</p>
   </body>
 </html>
