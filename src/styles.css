@@ -31,8 +31,10 @@
   --ink: #222222;
   --dim: #6e6e6b;
   --line: rgb(34 34 34 / 0.16);
+  /* Un seul rouge sur la page : les aplats, le rail et le grand numéro du verset. */
   --rubric: #e27960;
-  /* Même accent, assombri : la pêche n'a pas assez de contraste en petit corps. */
+  /* Le même, assombri, réservé aux petits corps — erreurs, anneaux de focus —
+     où la pêche claire tombe sous le contraste lisible. */
   --rubric-deep: #c25434;
   --display: 'Ortica Linear', 'Iowan Old Style', Georgia, serif;
   --sans: 'Ronzino', 'Helvetica Neue', Arial, sans-serif;

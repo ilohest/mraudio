@@ -4,6 +4,10 @@ import type { Track } from '../lib/catalog'
 const audio = new Audio()
 audio.preload = 'auto'
 
+/** Ce qu'on fait quand un verset se termine : rien, ou enchaîner (voir App.vue). */
+export type Chain = 'stop' | 'next' | 'random'
+let whenEnded: (() => void) | null = null
+
 const track = shallowRef<Track | null>(null)
 const playing = ref(false)
 const loading = ref(false)
@@ -13,7 +17,10 @@ const duration = ref(0)
 
 audio.addEventListener('play', () => (playing.value = true))
 audio.addEventListener('pause', () => (playing.value = false))
-audio.addEventListener('ended', () => (playing.value = false))
+audio.addEventListener('ended', () => {
+  playing.value = false
+  whenEnded?.()
+})
 audio.addEventListener('waiting', () => (loading.value = true))
 audio.addEventListener('playing', () => (loading.value = false))
 audio.addEventListener('canplay', () => (loading.value = false))
@@ -56,7 +63,11 @@ export function usePlayer() {
     audio.load()
     track.value = null
   }
-  return { track, playing, loading, error, current, duration, load, toggle, restart, seek, stop }
+  /** Un seul abonné : App.vue, qui sait enchaîner. */
+  function onEnded(fn: (() => void) | null) {
+    whenEnded = fn
+  }
+  return { track, playing, loading, error, current, duration, load, toggle, restart, seek, stop, onEnded }
 }
 
 export function formatTime(s: number) {

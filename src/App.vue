@@ -2,12 +2,11 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import LangSwitch from './components/LangSwitch.vue'
 import DrawBar from './components/DrawBar.vue'
-import VersePicker from './components/VersePicker.vue'
 import NowPlaying from './components/NowPlaying.vue'
 import { lang, t } from './lib/i18n'
 import { getCatalog, type Track } from './lib/catalog'
 import { shortLabel } from './lib/labels'
-import { usePlayer } from './composables/usePlayer'
+import { usePlayer, type Chain } from './composables/usePlayer'
 
 const catalog = computed(() => getCatalog(lang.value))
 const player = usePlayer()
@@ -36,6 +35,21 @@ function step(dir: 1 | -1) {
   const next = tr && catalog.value?.neighbour(tr, dir)
   if (next) open(next)
 }
+
+/* Écoute suivie : ce qu'on fait quand un verset se termine. Le choix se garde d'une
+   visite à l'autre — on vient écouter une suite, pas le réarmer à chaque fois. */
+const chain = ref<Chain>('stop')
+try {
+  const saved = localStorage.getItem('mr-chain')
+  if (saved === 'next' || saved === 'random') chain.value = saved
+} catch { /* stockage indisponible */ }
+watch(chain, (v) => {
+  try { localStorage.setItem('mr-chain', v) } catch { /* stockage indisponible */ }
+})
+player.onEnded(() => {
+  if (chain.value === 'next') step(1)
+  else if (chain.value === 'random') draw()
+})
 
 const hasPrev = computed(() => !!(player.track.value && catalog.value?.neighbour(player.track.value, -1)))
 const hasNext = computed(() => !!(player.track.value && catalog.value?.neighbour(player.track.value, 1)))
@@ -94,29 +108,29 @@ onMounted(() => addEventListener('keydown', onKey))
 
     <DrawBar v-if="catalog" @draw="draw" />
 
-    <main class="grid" :class="{ solo: !(catalog && player.track.value) }">
-      <section v-if="catalog && player.track.value" ref="stage" class="card pane stage">
-        <NowPlaying
-          :key="`${lang}-${player.track.value.id}`"
-          :track="player.track.value"
-          :drawn="drawn"
-          :has-prev="hasPrev"
-          :has-next="hasNext"
-          @prev="step(-1)"
-          @next="step(1)"
-        />
-      </section>
-
-      <div class="column">
-        <section v-if="catalog" class="card pane">
-          <VersePicker :catalog="catalog" @pick="(tr) => open(tr)" />
-        </section>
-        <section v-else class="card pane"><p class="soon">{{ t.soon }}</p></section>
-      </div>
+    <main ref="stage" class="card pane">
+      <NowPlaying
+        v-if="catalog"
+        :key="`${lang}-${player.track.value?.id ?? 'buit'}`"
+        :catalog="catalog"
+        :track="player.track.value"
+        :drawn="drawn"
+        :has-prev="hasPrev"
+        :has-next="hasNext"
+        :chain="chain"
+        @prev="step(-1)"
+        @next="step(1)"
+        @chain="(c) => (chain = c)"
+        @pick="(tr) => open(tr)"
+      />
+      <p v-else class="soon">{{ t.soon }}</p>
     </main>
 
+    <!-- Légende du clavier : la touche dessinée comme une touche, puis ce qu'elle fait. -->
     <footer class="foot">
-      <span class="keys">{{ t.shortcuts }}</span>
+      <span class="item"><kbd>{{ t.keySpace }}</kbd>{{ t.keyPlay }}</span>
+      <span class="item"><kbd>←</kbd><kbd>→</kbd>{{ t.keyVerse }}</span>
+      <span class="item"><kbd>R</kbd>{{ t.keyDraw }}</span>
     </footer>
   </div>
 </template>
@@ -160,26 +174,8 @@ onMounted(() => addEventListener('keydown', onKey))
   to { opacity: 1; transform: none; }
 }
 
-/* Deux colonnes dès qu'il y a la place : le repère à gauche, les commandes à droite. */
-.grid {
-  display: grid;
-  gap: var(--gap);
-  grid-template-columns: 1fr;
-  align-items: start;
-}
-.column {
-  display: grid;
-  gap: var(--gap);
-  align-content: start;
-}
-/* Les cartes mesurent leur propre largeur : les tailles internes sont en cqi,
-   donc la colonne étroite ne reçoit pas des chiffres calibrés pour la page entière. */
+/* La carte mesure sa propre largeur : les tailles internes sont en cqi. */
 .pane { container-type: inline-size; }
-
-@media (min-width: 1000px) {
-  .grid { grid-template-columns: minmax(0, 1fr) 400px; }
-  .grid.solo { grid-template-columns: 1fr; }
-}
 
 .soon {
   margin: 0;
@@ -192,13 +188,34 @@ onMounted(() => addEventListener('keydown', onKey))
 .foot {
   margin-top: auto;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
-  padding: 4px 6px 2px;
-  font: 400 0.82rem/1.4 var(--sans);
+  gap: 8px 24px;
+  padding: 6px 6px 2px;
+  font: 400 0.84rem/1.4 var(--sans);
   color: var(--dim);
 }
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+/* Le filet du bas donne le relief d'une touche, sans ombre portée. */
+kbd {
+  font: inherit;
+  line-height: 1;
+  padding: 5px 7px;
+  min-width: 2.2em;
+  text-align: center;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+}
 
-@media (max-width: 620px) {
-  .keys { display: none; }
+/* Sans clavier, la légende n'a rien à dire. */
+@media (pointer: coarse) {
+  .foot { display: none; }
 }
 </style>

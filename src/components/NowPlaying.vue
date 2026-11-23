@@ -2,55 +2,174 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '../lib/i18n'
 import { labelFor } from '../lib/labels'
-import { toRoman } from '../lib/roman'
-import type { Track } from '../lib/catalog'
-import { formatTime, usePlayer } from '../composables/usePlayer'
+import { parseBook, toRoman } from '../lib/roman'
+import { FIRST_BOOK, LAST_BOOK, type Catalog, type Track } from '../lib/catalog'
+import { formatTime, usePlayer, type Chain } from '../composables/usePlayer'
+import Icon from './Icon.vue'
+import Reel from './Reel.vue'
 
-const props = defineProps<{ track: Track; drawn: boolean; hasPrev: boolean; hasNext: boolean }>()
-const emit = defineEmits<{ prev: []; next: [] }>()
+const props = defineProps<{
+  catalog: Catalog
+  track: Track | null
+  drawn: boolean
+  hasPrev: boolean
+  hasNext: boolean
+  chain: Chain
+}>()
+const emit = defineEmits<{ prev: []; next: []; chain: [Chain]; pick: [Track] }>()
 
 const { playing, loading, error, current, duration, toggle, restart, seek } = usePlayer()
 
-const label = computed(() => labelFor(props.track, t.value))
-/* « Epígrafs » n'est pas un nombre : il ne mérite pas la taille des chiffres. */
-const verseIsWord = computed(() => !!label.value.verse && !/^\d+$/.test(label.value.verse))
+const label = computed(() => (props.track ? labelFor(props.track, t.value) : null))
 
-/* Tirage : les chiffres défilent avant de se poser. Ici c'est la typo qui fait l'animation. */
+/**
+ * Le grand repère EST la saisie : on tape dans les chiffres qu'on lit. Ce qui n'a pas de
+ * numéro — préliminaires, litanies, épigraphes — se nomme au-dessus, champs laissés vides.
+ */
+const standing = computed(() => {
+  if (!props.track) return { kicker: '', name: t.value.chooseTitle }
+  const l = label.value!
+  if (!l.numeral) return { kicker: l.kicker, name: l.big }
+  if (props.track.verse === 0) return { kicker: '', name: t.value.epigraphs }
+  return null
+})
+
+const bookInput = ref('')
+const verseInput = ref('')
+const message = ref('')
+const verseEl = ref<HTMLInputElement | null>(null)
+
+function syncFromTrack() {
+  const tr = props.track
+  if (!tr || !label.value?.numeral) {
+    bookInput.value = ''
+    verseInput.value = ''
+    return
+  }
+  bookInput.value = toRoman(tr.book)
+  verseInput.value = tr.verse > 0 ? String(tr.verse) : ''
+}
+
+/* Tirage : deux rouleaux qui glissent et se posent l'un après l'autre. Le défilé est
+   une seule transition de transform — le navigateur l'interpole, d'où la fluidité. */
+const REEL = 20
 const rolling = ref(false)
-const rollBig = ref('')
-const rollVerse = ref('')
+const bookReel = ref<string[]>([])
+const verseReel = ref<string[]>([])
 let timer: number | undefined
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+const ROMANS = Array.from({ length: LAST_BOOK }, (_, i) => toRoman(i + 1))
+
+/** Valeurs intermédiaires de la largeur de la valeur finale : sinon la colonne tressaute. */
+function reelOf(target: string, pool: string[]) {
+  const same = pool.filter((s) => s.length === target.length && s !== target)
+  const src = same.length >= 4 ? same : pool.filter((s) => s.length <= target.length)
+  const out = Array.from({ length: REEL - 1 }, () => src[Math.floor(Math.random() * src.length)] ?? target)
+  out.push(target)
+  return out
+}
+
+/** Nombres du même nombre de chiffres que la cible, pour le rouleau des versets. */
+function sameWidthNumbers(d: number) {
+  const lo = d === 1 ? 1 : 10 ** (d - 1)
+  const hi = 10 ** d - 1
+  return Array.from({ length: Math.min(hi - lo + 1, 60) }, (_, i) => String(lo + i))
+}
+
 watch(
-  () => props.track.id,
+  () => props.track?.id,
   () => {
-    clearInterval(timer)
-    if (!props.drawn || reduced || !label.value.numeral) return (rolling.value = false)
+    clearTimeout(timer)
+    syncFromTrack()
+    message.value = ''
+    rolling.value = false
+    const tr = props.track
+    if (!tr || !props.drawn || reduced || !label.value?.numeral || tr.verse < 1) return
+    bookReel.value = reelOf(toRoman(tr.book), ROMANS)
+    verseReel.value = reelOf(String(tr.verse), sameWidthNumbers(String(tr.verse).length))
     rolling.value = true
-    const start = performance.now()
-    timer = window.setInterval(() => {
-      rollBig.value = toRoman(1 + Math.floor(Math.random() * 40))
-      rollVerse.value = String(1 + Math.floor(Math.random() * 99))
-      if (performance.now() - start > 620) {
-        clearInterval(timer)
-        rolling.value = false
-      }
-    }, 50)
+    timer = window.setTimeout(() => (rolling.value = false), 1600)
   },
   { immediate: true },
 )
-onBeforeUnmount(() => clearInterval(timer))
+onBeforeUnmount(() => clearTimeout(timer))
 
-const big = computed(() => (rolling.value ? rollBig.value : label.value.big))
-/* XXXVIII est trois fois plus long que VII : la taille suit le nombre de signes,
-   sinon le chiffre romain se casse en deux lignes. */
-const bigSize = computed(() => {
-  if (!label.value.numeral) return ''
-  const n = big.value.length
+const book = computed(() => parseBook(bookInput.value))
+const range = computed(() => (book.value !== null ? props.catalog.range(book.value) : null))
+const bookOk = computed(
+  () => book.value !== null && book.value >= FIRST_BOOK && book.value <= LAST_BOOK && !!range.value,
+)
+/* XXXVIII est trois fois plus long que VII : la taille suit le nombre de signes. */
+const bookSize = computed(() => {
+  const n = bookInput.value.trim().length
   return n >= 6 ? 'len-xl' : n >= 4 ? 'len-l' : ''
 })
-const verse = computed(() => (rolling.value ? rollVerse.value : label.value.verse))
+
+const bookHint = computed(() => {
+  if (rolling.value || !bookInput.value.trim()) return ''
+  if (!bookOk.value || !range.value) return '—'
+  return `${toRoman(book.value!)} · ${t.value.versesIn(range.value[1])}`
+})
+const verseHint = computed(() => (rolling.value || !range.value ? '' : `${range.value[0]} – ${range.value[1]}`))
+
+/* Le bouton n'apparaît que si la saisie ne décrit plus ce qui joue : il enseigne
+   l'interaction au moment où on la découvre, sans encombrer le reste du temps. */
+const dirty = computed(() => {
+  if (rolling.value) return false
+  const tr = props.track
+  const raw = verseInput.value.trim()
+  if (!tr || !label.value?.numeral) return !!bookInput.value.trim() || !!raw
+  return book.value !== tr.book || (raw === '' ? 0 : parseInt(raw, 10)) !== tr.verse
+})
+const asking = computed(() => !props.track || dirty.value)
+
+/** Collage « VII 56 », « 7,56 », « 07056 » dans le champ livre → répartit les deux champs. */
+function splitCombined() {
+  const raw = bookInput.value.trim()
+  const compact = raw.match(/^(\d{2})(\d{3})$/)
+  const pair = raw.match(/^([ivxlcdm]+|\d{1,2})[\s.,;:/-]+(\d{1,3})$/i)
+  const m = compact ?? pair
+  if (m) {
+    bookInput.value = m[1].replace(/^0(\d)$/, '$1')
+    verseInput.value = String(parseInt(m[2], 10))
+    return true
+  }
+  return false
+}
+
+function onBookKey(e: KeyboardEvent) {
+  if (e.key !== 'Enter') return
+  if (splitCombined()) return submit()
+  verseEl.value?.focus()
+}
+function onBookInput() {
+  message.value = ''
+  if (splitCombined()) verseEl.value?.focus()
+}
+
+/* Une erreur secoue le bloc : à l'écran, c'est plus clair qu'une ligne de texte de plus. */
+const shaking = ref(false)
+function fail(msg: string) {
+  message.value = msg
+  shaking.value = false
+  requestAnimationFrame(() => (shaking.value = true))
+  setTimeout(() => (shaking.value = false), 500)
+}
+
+function submit() {
+  message.value = ''
+  if (!bookInput.value.trim()) return fail(t.value.errEmptyBook)
+  if (!bookOk.value) return fail(t.value.errBook(LAST_BOOK))
+  const raw = verseInput.value.trim()
+  const verse = raw === '' ? 0 : parseInt(raw, 10)
+  const [min, max] = range.value!
+  if (isNaN(verse) || verse < min || verse > max) return fail(t.value.errVerse(min, max))
+  const tr = props.catalog.find(book.value!, verse)
+  if (!tr) return fail(t.value.errMissing)
+  emit('pick', tr)
+}
+
 const progress = computed(() => (duration.value ? current.value / duration.value : 0))
 
 /* Le rail porte la mesure : c'est lui qu'on interroge, pas la zone de clic qui l'entoure. */
@@ -94,113 +213,287 @@ async function share() {
     setTimeout(() => (copied.value = false), 1800)
   } catch { /* presse-papiers indisponible */ }
 }
+
+/* Écoute suivie : trois états, libellés en toutes lettres plutôt qu'en symboles. */
+const chainOpts = computed(() => [
+  { v: 'stop' as const, label: t.value.chainStop },
+  { v: 'next' as const, label: t.value.chainNext },
+  { v: 'random' as const, label: t.value.chainRandom },
+])
 </script>
 
 <template>
   <article class="now">
-    <!-- Le repère, en très grand : c'est lui le visuel. -->
-    <div class="hero" :class="{ solo: !verse }">
-      <div class="slot">
-        <p class="micro">{{ label.kicker }}</p>
-        <p class="mega" :class="[bigSize, { word: !label.numeral, rolling }]">{{ big }}</p>
-      </div>
-      <div v-if="verse" class="slot verse">
-        <p class="micro">{{ label.verseLabel || '&nbsp;' }}</p>
-        <p class="mega accent" :class="{ word: verseIsWord, rolling }">{{ verse }}</p>
-      </div>
-    </div>
-
-    <!-- Progression : un rail qui s'épaissit et sort sa tête dès qu'on l'approche. -->
-    <div
-      ref="bar"
-      class="scrub"
-      :class="{ busy: loading && !error, live: scrubbing }"
-      role="slider"
-      tabindex="0"
-      :aria-label="t.verse"
-      :aria-valuemin="0"
-      :aria-valuemax="Math.round(duration)"
-      :aria-valuenow="Math.round(current)"
-      :aria-valuetext="formatTime(current)"
-      @pointerdown="down"
-      @pointermove="move"
-      @pointerup="up"
-      @pointercancel="up"
-      @keydown="barKey"
-    >
-      <span ref="rail" class="rail">
-        <span class="elapsed" :style="{ width: `${progress * 100}%` }">
-          <i class="knob"></i>
-        </span>
-      </span>
-    </div>
-
-    <p class="times">
-      <span>{{ formatTime(current) }}</span>
-      <span v-if="error" class="err" role="alert">{{ t.errAudio }}</span>
-      <span>{{ formatTime(duration) }}</span>
+    <p v-if="standing" class="standing">
+      <span v-if="standing.kicker" class="micro">{{ standing.kicker }}</span>
+      <span class="name">{{ standing.name }}</span>
     </p>
 
-    <nav class="controls">
-      <button type="button" class="primary" :class="{ pulse }" :disabled="error" @click="onToggle">
-        {{ playing ? t.pause : t.play }}
-      </button>
-      <button type="button" :disabled="!hasPrev" @click="emit('prev')">{{ t.prev }}</button>
-      <button type="button" @click="restart">{{ t.replay }}</button>
-      <button type="button" :disabled="!hasNext" @click="emit('next')">{{ t.next }}</button>
-      <button type="button" :class="{ done: copied }" @click="share">{{ copied ? t.copied : t.share }}</button>
-    </nav>
+    <!-- Le repère et la saisie sont le même objet : on tape dans les chiffres qu'on lit. -->
+    <div class="hero" :class="{ shaking }">
+      <label class="slot">
+        <span class="micro">{{ t.book }}</span>
+        <span class="field">
+          <Reel v-if="rolling" class="mega" :class="bookSize" :items="bookReel" :duration="1000" />
+          <input
+            v-else
+            v-model="bookInput"
+            class="mega"
+            :class="bookSize"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            maxlength="9"
+            placeholder="VII"
+            :aria-label="t.book"
+            :aria-invalid="!!bookInput.trim() && !bookOk"
+            @input="onBookInput"
+            @keydown="onBookKey"
+          />
+        </span>
+        <span class="micro hint" :class="{ bad: !!bookInput.trim() && !bookOk }">{{ bookHint || '&nbsp;' }}</span>
+      </label>
+
+      <label class="slot verse">
+        <span class="micro">{{ t.verse }}</span>
+        <span class="field">
+          <Reel v-if="rolling" class="mega accent" :items="verseReel" :duration="1300" :delay="110" />
+          <input
+            v-else
+            ref="verseEl"
+            v-model="verseInput"
+            class="mega accent"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="off"
+            maxlength="3"
+            placeholder="56"
+            :aria-label="t.verse"
+            @input="message = ''"
+            @keydown.enter.prevent="submit"
+          />
+        </span>
+        <span class="micro hint">{{ verseHint || '&nbsp;' }}</span>
+      </label>
+    </div>
+
+    <div class="reveal" :class="{ open: asking }">
+      <div>
+        <button class="go" type="button" @click="submit">
+          <span>{{ t.listen }}</span>
+          <Icon name="arrow" />
+        </button>
+      </div>
+    </div>
+
+    <p v-if="message" class="msg" role="status" aria-live="polite">{{ message }}</p>
+
+    <template v-if="track">
+      <!-- Progression : un rail qui s'épaissit et sort sa tête dès qu'on l'approche. -->
+      <div
+        ref="bar"
+        class="scrub"
+        :class="{ busy: loading && !error, live: scrubbing }"
+        role="slider"
+        tabindex="0"
+        :aria-label="t.verse"
+        :aria-valuemin="0"
+        :aria-valuemax="Math.round(duration)"
+        :aria-valuenow="Math.round(current)"
+        :aria-valuetext="formatTime(current)"
+        @pointerdown="down"
+        @pointermove="move"
+        @pointerup="up"
+        @pointercancel="up"
+        @keydown="barKey"
+      >
+        <span ref="rail" class="rail">
+          <span class="elapsed" :style="{ width: `${progress * 100}%` }">
+            <i class="knob"></i>
+          </span>
+        </span>
+      </div>
+
+      <p class="times">
+        <span>{{ formatTime(current) }}</span>
+        <span v-if="error" class="err" role="alert">{{ t.errAudio }}</span>
+        <span>{{ formatTime(duration) }}</span>
+      </p>
+
+      <nav class="controls">
+        <button type="button" class="primary" :class="{ pulse }" :disabled="error" @click="onToggle">
+          <Icon :name="playing ? 'pause' : 'play'" />
+          <span>{{ playing ? t.pause : t.play }}</span>
+        </button>
+        <button type="button" :disabled="!hasPrev" @click="emit('prev')">
+          <Icon name="prev" /><span>{{ t.prev }}</span>
+        </button>
+        <button type="button" @click="restart">
+          <Icon name="restart" /><span>{{ t.replay }}</span>
+        </button>
+        <button type="button" :disabled="!hasNext" @click="emit('next')">
+          <Icon name="next" /><span>{{ t.next }}</span>
+        </button>
+        <button type="button" :class="{ done: copied }" @click="share">
+          <Icon :name="copied ? 'check' : 'link'" /><span>{{ copied ? t.copied : t.share }}</span>
+        </button>
+      </nav>
+
+      <!-- Écoute suivie : un réglage, pas une action. Il reste en bas, en petit. -->
+      <div class="chain" role="group" :aria-label="t.chainLabel">
+        <span class="micro">{{ t.chainLabel }}</span>
+        <div class="opts">
+          <button
+            v-for="o in chainOpts"
+            :key="o.v"
+            type="button"
+            :class="{ on: chain === o.v }"
+            :aria-pressed="chain === o.v"
+            @click="emit('chain', o.v)"
+          >
+            {{ o.label }}
+          </button>
+        </div>
+      </div>
+    </template>
   </article>
 </template>
 
 <style scoped>
 .now { display: block; }
 
+/* Ce qui joue mais n'a pas de numéro, ou l'invitation quand rien ne joue encore. */
+.standing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 12px;
+  margin: 0;
+  padding: var(--pad) var(--pad) 0;
+}
+.standing .name {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(1.5rem, 5cqi, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+}
+
 .hero {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
-.hero.solo { grid-template-columns: 1fr; }
+.hero.shaking { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
 
 .slot {
+  position: relative;
+  display: block;
   padding: var(--pad);
   min-width: 0;
+  cursor: text;
   animation: lift 0.62s cubic-bezier(0.22, 1.15, 0.3, 1) both;
 }
-/* La seconde case entre juste après la première : le repère se compose en deux temps. */
-.slot.verse {
-  border-left: 1px solid var(--line);
-  animation-delay: 0.07s;
+.slot.verse { animation-delay: 0.07s; }
+/* Le filet qui sépare les deux cases est en retrait égal en haut et en bas. */
+.slot.verse::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--pad);
+  bottom: var(--pad);
+  width: 1px;
+  background: var(--line);
 }
 @keyframes lift {
   from { opacity: 0; transform: translateY(18px) scale(0.965); }
   to { opacity: 1; transform: none; }
 }
 
-/* Le repère en Ortica Light. Les tailles sont en cqi : elles suivent la carte, pas l'écran. */
+/* Le filet sous le nombre dit « ceci est un champ » — sans lui, un grand chiffre
+   ne se laisse pas deviner comme saisissable. */
+.field {
+  display: block;
+  margin-top: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  transition: border-color 0.2s ease;
+}
+.slot:focus-within .field { border-bottom-color: var(--ink); }
+
+/* Les tailles sont en cqi : elles suivent la carte, pas l'écran. */
 .mega {
-  margin: 12px 0 0;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(3.2rem, 18cqi, 9.5rem);
-  line-height: 0.92;
+  font-size: clamp(3.2rem, 15cqi, 8.5rem);
+  line-height: 0.95;
   letter-spacing: -0.012em;
   font-variant-numeric: lining-nums;
-  white-space: nowrap;
 }
+.mega:focus { outline: none; }
+.mega::placeholder { color: var(--line); }
 /* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
-.mega.len-l { font-size: clamp(2.6rem, 13.5cqi, 7rem); }
-.mega.len-xl { font-size: clamp(2rem, 10.5cqi, 5.4rem); }
+.mega.len-l { font-size: clamp(2.6rem, 11.5cqi, 6.4rem); }
+.mega.len-xl { font-size: clamp(2rem, 9cqi, 5rem); }
+.mega.accent { color: var(--rubric); }
+.mega[aria-invalid='true'] { color: var(--rubric-deep); }
+.hint { font-size: 0.8rem; }
+.hint.bad { color: var(--rubric-deep); }
 
-/* Un nom (« Pare Daurat ») ou un mot (« Epígrafs ») : même police, autre échelle. */
-.mega.word {
-  white-space: normal;
-  font-size: clamp(1.7rem, 7cqi, 3.4rem);
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+/* Le bouton se déplie au lieu d'apparaître d'un coup. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.3, 1);
 }
-.mega.accent { color: var(--rubric-deep); }
-.mega.rolling { color: var(--dim); }
+.reveal.open { grid-template-rows: 1fr; }
+.reveal > div { overflow: hidden; }
+.go {
+  appearance: none;
+  width: calc(100% - 2 * var(--pad));
+  margin: 0 var(--pad) var(--pad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink);
+  padding: 17px 20px;
+  font: 400 1.05rem/1.2 var(--sans);
+  cursor: pointer;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1),
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.go:hover { background: var(--ink); color: var(--bg); transform: translateY(-3px); }
+.go:active { transform: scale(0.98); }
+.go:focus-visible { outline: 3px solid var(--rubric-deep); outline-offset: 3px; }
+
+.msg {
+  margin: 0;
+  padding: 0 var(--pad) var(--pad);
+  font: 400 0.95rem/1.4 var(--sans);
+  color: var(--rubric-deep);
+}
 
 .scrub {
   position: relative;
@@ -275,15 +568,19 @@ async function share() {
 }
 .controls button {
   appearance: none;
-  flex: 1 1 132px;
+  flex: 1 1 168px;
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: var(--bg);
   color: var(--ink);
   font: 400 0.96rem/1.3 var(--sans);
-  padding: 16px 10px;
+  padding: 16px 12px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   transition:
     transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
     background 0.2s ease,
@@ -303,7 +600,7 @@ async function share() {
 
 /* La lecture est la seule commande imprimée en plein. */
 .controls .primary {
-  flex: 2 1 230px;
+  flex: 2 1 260px;
   background: var(--ink);
   border-color: var(--ink);
   color: var(--bg);
@@ -317,9 +614,46 @@ async function share() {
   100% { transform: scale(1); }
 }
 
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: calc(var(--pad) - 6px) var(--pad) var(--pad);
+  border-top: 1px solid var(--line);
+  margin-top: -6px;
+}
+.opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opts button {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font: 400 0.86rem/1.2 var(--sans);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition:
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.opts button:hover { color: var(--ink); border-color: var(--ink); transform: translateY(-2px); }
+.opts button:active { transform: scale(0.95); }
+.opts button.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.opts button:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
+
 @container (max-width: 620px) {
   .hero { grid-template-columns: 1fr; }
-  .slot.verse { border-left: 0; border-top: 1px solid var(--line); }
+  .slot.verse::before {
+    left: var(--pad);
+    right: var(--pad);
+    top: 0;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+  }
   .controls .primary { flex-basis: 100%; }
 }
 </style>

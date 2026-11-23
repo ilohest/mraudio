@@ -22,9 +22,10 @@ Principes, à respecter pour toute évolution :
 - **Fond blanc** `#fff`, contenu posé dans des **cartes** à fond clair `#f2f1f0`, **rayon 12 px**,
   gouttière de 16 px. Une seule carte crème `#fff5bb` : le titre. Aucune ombre portée.
 - Palette « burnt peach », choisie par Isaure : crème `#fff5bb`, carte `#f2f1f0`, encre `#222`,
-  accent `#e27960`. L'accent existe en **deux forces** : `--rubric` pour les aplats (rail de
-  progression, survol du tirage) et `--rubric-deep` `#c25434` pour tout ce qui est écrit petit
-  ou doit rester lisible — messages d'erreur, anneaux de focus, et le numéro du verset.
+  accent `#e27960`. **Un seul rouge** sur la page : les aplats, le rail de progression, les survols
+  et le grand numéro du verset. `--rubric-deep` `#c25434` est le même, assombri, et ne sert qu'aux
+  petits corps — messages d'erreur, anneaux de focus — où la pêche claire tombe sous le contraste
+  lisible (2,6:1 sur la carte grise).
 - **Pas de mode sombre**, à la demande d'Isaure. `color-scheme: light` est posé sur `:root` pour
   que le navigateur n'assombrisse pas les champs. Ne pas réintroduire `prefers-color-scheme`.
 - Deux fontes, **auto-hébergées**, toutes deux de Collletttivo et sous SIL Open Font License 1.1 :
@@ -37,6 +38,42 @@ Principes, à respecter pour toute évolution :
   survol qui soulève de 2–3 px, clic qui écrase à 0,96, tête du rail qui sort en ressort,
   secousse du bloc de saisie sur erreur, détente du bouton de lecture à chaque bascule.
   Tout est désactivé sous `prefers-reduced-motion`.
+
+La carte du lecteur est **une seule chose à deux états**. Le grand repère *est* la saisie : on
+tape dans les chiffres qu'on lit (`NowPlaying.vue`). Tant que rien ne joue, la carte n'est qu'un
+formulaire ; dès qu'un verset est ouvert, le rail, les commandes et l'écoute suivie apparaissent
+dessous. Il n'y a plus de composant `VersePicker` — il faisait doublon avec le repère.
+- Un grand chiffre ne dit pas « je suis un champ » : le **filet sous le nombre** et la ligne
+  d'indication en dessous sont ce qui le fait lire comme un formulaire. Ne pas les retirer.
+- Le bouton « Escoltar » n'apparaît que si la saisie ne décrit plus ce qui joue (`dirty`), ou si
+  rien ne joue. Il se déplie par `grid-template-rows: 0fr → 1fr`.
+- Les préliminaires, les litanies et les épigraphes n'ont pas de numéro : leur nom s'affiche
+  au-dessus des champs, laissés vides.
+
+**Écoute suivie** (« podcast »), demandée le 23/11/2026 : un réglage, pas une action. « En acabar
+el verset : s'arrêter / suivre dans l'ordre / un autre au hasard », en bas de la carte du lecteur.
+Le choix se garde dans `localStorage` sous `mr-chain`. L'enchaînement passe par `usePlayer.onEnded`,
+dont **App.vue est le seul abonné**. « Suivre dans l'ordre » marche sur la liste à plat, donc il
+franchit les livres et lit aussi les épigraphes : c'est une lecture continue de l'œuvre.
+
+**Tirage** : il couvre les versets des livres I–XL, **plus les préliminaires et les litanies** —
+c'est leur seul accès depuis que la ligne « També » a été retirée. Attention : cela ne fait que
+4 pistes sur 2 809, soit **à peu près un tirage sur sept cents**. Si la cliente veut vraiment
+qu'on tombe dessus, il faudra les pondérer. Les épigraphes restent hors du tirage.
+
+**Animation du tirage** (`Reel.vue`) : une colonne de valeurs qui glisse et décélère, et non un
+texte remplacé toutes les 50 ms — c'est ce qui faisait saccader la première version. Une seule
+transition de `transform`, interpolée par le navigateur. Deux points comptent : les valeurs
+intermédiaires ont **la largeur de la valeur finale** (sinon la colonne tressaute et déborde de
+sa fenêtre), et les deux rouleaux ne se posent pas ensemble (le verset a 110 ms de retard).
+
+**Icônes** (`Icon.vue`) : dessinées à la main, pas de bibliothèque. Piège rencontré deux fois :
+sur une flèche circulaire, **la pointe se place à l'arrivée du tracé, pas à son départ**, sinon
+elle désigne le sens inverse de la rotation.
+
+**Légende du clavier** : en pied de page, la touche dessinée comme une touche (`<kbd>`) suivie de
+ce qu'elle fait. Elle disparaît sous `@media (pointer: coarse)` : sans clavier, elle n'a rien à
+dire. L'ancienne ligne « Espai · lectura ←→ · verset R · atzar » était illisible.
 
 Détails à ne pas casser :
 - **Le tirage est l'action principale** : pleine largeur, imprimée en plein, juste sous le titre,
@@ -58,8 +95,9 @@ Détails à ne pas casser :
 Retirés à la demande d'Isaure, ne pas remettre sans elle :
 - l'accroche « Escolta allò que l'atzar… » ;
 - le compte d'audios (« 2 809 àudios ») ;
-- la ligne « També : Preliminars / Lletanies ». **Conséquence** : le livre 0 et les litanies ne
-  sont plus atteignables depuis l'interface, seulement par lien direct (`#ca/0/0b`, `#ca/41/0`) ;
+- la ligne « També : Preliminars / Lletanies » — le livre 0 et les litanies passent désormais
+  par le tirage (voir plus haut) et par lien direct (`#ca/0/0b`, `#ca/41/0`) ;
+- l'indication « I – XL » sous le champ du livre ;
 - le bouton « Obrir-ne un altre » de la barre de commandes : il appelait le même `draw()` que le
   grand bouton de tirage, qui est juste au-dessus.
 
@@ -68,7 +106,8 @@ Retirés à la demande d'Isaure, ne pas remettre sans elle :
 - `src/lib/i18n.ts` — textes CA/ES/FR, langue via hash > localStorage > navigateur.
 - `src/lib/labels.ts` — libellés (Llibre VII · Verset 56, Epígrafs, Preliminars, Lletanies).
 - `src/composables/usePlayer.ts` — un seul `Audio()` global, état réactif.
-- `src/components/` — DrawBar (bande de tirage), VersePicker (saisie), NowPlaying (repère + lecteur), LangSwitch.
+- `src/components/` — DrawBar (le gros bouton de tirage), NowPlaying (repère saisissable + lecteur
+  + écoute suivie), Reel (le rouleau du tirage), Icon (les pictogrammes), LangSwitch.
 - `scripts/audio.mjs` — génère le manifeste et convertit les audios (ffmpeg).
 - `scripts/screens.py` — captures Playwright de vérification (serveur sur :4173).
 
@@ -117,7 +156,8 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
 - Design « spécimen » vérifié dans le panneau Chromium, en large et en 375 px : titre, tirage (animation
   des chiffres puis lecture), `XXXVIII` sur une ligne, livre 0 (« Preliminars / Pare Daurat »), lecture,
   rail de progression. Vérifié aussi que la page reste claire quand le système est en sombre.
-  Build : **224 Ko, 7 fichiers**.
+  Écoute suivie vérifiée bout en bout : le verset 50 enchaîne bien sur le 51 et le réglage
+  survit au rechargement. Build : **216 Ko, 5 fichiers**.
 - **Pas encore vérifié sur Safari**, aucun des trois designs.
 - Pour le test local, `public/audio/ca` est un **lien symbolique** vers `…/_web/ca` (évite de dupliquer 803 Mo).
   `public/audio` est dans `.gitignore`. Attention : `npm run build` copierait ces 803 Mo dans `dist/` —

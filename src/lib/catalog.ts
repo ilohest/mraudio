@@ -67,9 +67,17 @@ export class Catalog {
     return this.tracks[i + step] ?? null
   }
 
-  /** Tirage : uniquement de vrais versets (livres I–XL, verset ≥ 1). */
+  /**
+   * Tirage : les versets des livres I–XL, plus les préliminaires et les litanies —
+   * seule façon de les atteindre depuis que la ligne « També » a été retirée.
+   * Les épigraphes (verset 0 des livres I–XL) restent hors du tirage.
+   */
   random(exclude?: Track | null) {
-    const pool = this.tracks.filter((tr) => tr.book >= FIRST_BOOK && tr.book <= LAST_BOOK && tr.verse > 0 && !tr.part)
+    const pool = this.tracks.filter((tr) =>
+      tr.book === PRELIM_BOOK || tr.book === LITANIES_BOOK
+        ? true
+        : tr.book >= FIRST_BOOK && tr.book <= LAST_BOOK && tr.verse > 0 && !tr.part,
+    )
     let pick: Track
     do pick = pool[Math.floor(Math.random() * pool.length)]
     while (pool.length > 1 && exclude && pick.id === exclude.id)
