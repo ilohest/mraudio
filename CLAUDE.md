@@ -269,12 +269,16 @@ npm run audio -- --lang es --src "~/Downloads/Audios MR 2" --out ./audio-web --c
 ```
 Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seulement le manifeste.
 
-## État au 23/11/2026
-- Projet installé sur le Mac dans `~/Documents/workspace/Audio MR` (il n'existait que zippé dans
-  « EL MISSATGE RETROBAT EN AUDIO/Claude outputs/oracle-missatge-retrobat.zip »). Dépôt git local,
-  pas de remote : `bc9b8dd` l'ivoire d'origine, `1287a0c` le brutalisme, puis le design « spécimen ».
-- **Conversion CA terminée** : 2 809 pistes (2 810 moins `00000a`), 803 Mo dans
-  `audio-web/ca`. Les 2 809 fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
+## État au 24/11/2026
+
+**Le site est en ligne : <https://mraudio.app>**, en catalan et en espagnol. Code sur
+<https://github.com/ilohest/mraudio>. Trois designs se sont succédé, tous récupérables dans git :
+`bc9b8dd` l'ivoire d'origine, `1287a0c` le brutalisme, puis le « spécimen » actuel.
+
+- Projet installé dans `~/Documents/workspace/Audio MR` (il n'existait que zippé dans
+  « EL MISSATGE RETROBAT EN AUDIO/Claude outputs/oracle-missatge-retrobat.zip »).
+- **Conversion CA terminée** : 2 808 pistes (2 810 moins `00000a` et `04000T`), 803 Mo dans
+  `audio-web/ca`. Tous les fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
 - **Conversion ES terminée** (23/11/2026) : 2 807 pistes, 706 Mo dans `audio-web/es`, aucun échec.
   Contrôle complet et non pas par sondage : le manifeste a été recoupé avec une dérivation
   indépendante des identifiants, puis **chaque piste comparée à sa source** — toutes existent,
@@ -291,7 +295,9 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   rail de progression. Vérifié aussi que la page reste claire quand le système est en sombre.
   Écoute suivie vérifiée bout en bout : le verset 50 enchaîne bien sur le 51 et le réglage
   survit au rechargement. Build : **216 Ko, 5 fichiers**.
-- **Pas encore vérifié sur Safari**, aucun des trois designs.
+- **Safari mobile vérifié** le 24/11 par Isaure elle-même : sur iPhone, tout navigateur est
+  WebKit, et elle a confirmé la lecture et la fiche de l'écran verrouillé. **Safari sur Mac reste
+  à vérifier** — c'est le dernier trou du filet de tests.
 - Les audios convertis vivent dans **`audio-web/`, à la racine du projet** (ignoré par git).
   Ils étaient dans `~/Downloads/EL MISSATGE RETROBAT EN AUDIO/_web`, c'est-à-dire **à l'intérieur
   du dossier des sources** : vider Downloads aurait emporté l'audio du site. Déplacés le
