@@ -44,8 +44,14 @@ const out = resolve(args.out || 'audio-web')
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO_EXT = new Set(['.mp3', '.m4a', '.ogg', '.oga', '.wav', '.aac', '.flac', '.opus', '.webm', '.mp4'])
 
-/** Pistes écartées à la demande de la cliente : « 00000a » ne doit pas apparaître. */
-const DROP = new Set(['00000a'])
+/**
+ * Pistes écartées à la demande de la cliente, après écoute :
+ *  - « 00000a » : préliminaire qui ne doit pas apparaître (23/11/2026) ;
+ *  - « 04000t » : seconde piste d'épigraphes du livre IV catalan, dix secondes, qui se
+ *    glissait entre les épigraphes et le verset 1 et s'affichait à l'identique. L'espagnol
+ *    n'en a qu'une : les deux langues s'alignent maintenant sur 100 pistes pour ce livre.
+ */
+const DROP = new Set(['00000a', '04000t'])
 
 /** Fichiers isolés, nommés en toutes lettres, à rattacher à un identifiant. */
 const NAMED = new Map([['oraciones del padre y de la madre', '00000b']])

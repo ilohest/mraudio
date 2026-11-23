@@ -324,7 +324,7 @@ que le sien : rien ne doit partir sur le compte d'un tiers.
 - Le français, quand les audios arriveront.
 - Lui signaler les trois versets espagnols manquants (3/78, 12/79, 37/70) et l'unique
   préliminaire espagnol, au cas où des fichiers manqueraient.
-- Confirmer `04000T` (la cliente doit l'écouter) ; récupérer les noms ES / FR du livre 0.
+- Récupérer les noms ES / FR du livre 0 (l'espagnol n'a qu'une piste préliminaire).
 - Faire confirmer l'orthographe de « Adrés Molero » dans les crédits ES (« Andrés » ?), et la
   formulation « Disseny i desenvolupament » pour la signature d'Isaure.
 - Choisir l'hébergement : sous-dossier du site (ex. `louiscattiaux.com/oracle/`) avec `audio/` à côté,

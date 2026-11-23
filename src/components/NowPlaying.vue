@@ -149,15 +149,17 @@ const bookHint = computed(() => {
 /**
  * Le dernier verset d'un livre est son hypographe, comme le verset 0 en est l'épigraphe.
  * Il garde son numéro — contrairement au verset 0, celui-ci veut dire quelque chose — et
- * c'est la ligne d'indication qui le nomme. Elle réagit à la saisie, pas seulement à ce
- * qui joue : taper le dernier numéro suffit à l'annoncer.
+ * c'est **l'intitulé de la case** qui le nomme, à la place de « Verset ». Posé dans la ligne
+ * d'indication, en gris et en petit, personne ne le voyait. Il réagit à la saisie, pas
+ * seulement à ce qui joue : taper le dernier numéro suffit à l'annoncer.
  */
-const verseHint = computed(() => {
-  if (rolling.value || !range.value) return ''
+const isHypograph = computed(() => {
+  if (rolling.value || !range.value) return false
   const v = readVerse(verseInput.value)
-  if (v !== null && v > 0 && v === range.value[1]) return t.value.hypographs
-  return `${range.value[0]} – ${range.value[1]}`
+  return v !== null && v > 0 && v === range.value[1]
 })
+const verseLabel = computed(() => (isHypograph.value ? t.value.hypographs : t.value.verse))
+const verseHint = computed(() => (rolling.value || !range.value ? '' : `${range.value[0]} – ${range.value[1]}`))
 
 /* Le bouton n'apparaît que si la saisie ne décrit plus ce qui joue : il enseigne
    l'interaction au moment où on la découvre, sans encombrer le reste du temps. */
@@ -338,7 +340,7 @@ const chainOpts = computed(() => [
       </label>
 
       <label class="slot verse">
-        <span class="micro">{{ t.verse }}</span>
+        <span class="micro" :class="{ named: isHypograph }">{{ verseLabel }}</span>
         <span class="field">
           <Reel
             v-if="rolling"
@@ -605,6 +607,8 @@ input.mega { height: calc(var(--num) * 1.12); }
 
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }
+/* Quand l'intitulé nomme l'hypographe, il n'est plus une étiquette parmi d'autres. */
+.micro.named { color: var(--ink); }
 .hint { font-size: 0.8rem; }
 .hint.bad { color: var(--rubric-deep); }
 
