@@ -217,6 +217,12 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   pas de remote : `bc9b8dd` l'ivoire d'origine, `1287a0c` le brutalisme, puis le design « spécimen ».
 - **Conversion CA terminée** : 2 809 pistes (2 810 moins `00000a`), 803 Mo dans
   `EL MISSATGE RETROBAT EN AUDIO/_web/ca`. Les 2 809 fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
+- **Conversion ES terminée** (23/11/2026) : 2 807 pistes, 706 Mo dans `…/_web/es`, aucun échec.
+  Contrôle complet et non pas par sondage : le manifeste a été recoupé avec une dérivation
+  indépendante des identifiants, puis **chaque piste comparée à sa source** — toutes existent,
+  sont en AAC mono, et leur durée correspond à moins d'une demi-seconde près. Zéro anomalie.
+  Lecture vérifiée dans l'app : verset, préliminaire, une plage de litanies (3 min 30),
+  tirage, enchaînement, et le passage ES → CA qui conserve le verset.
 - Un piège rencontré : l'arrêt « disque plein » avait laissé `02075.m4a` tronqué à 44 octets, et la reprise le
   **sautait** parce que le fichier existait. `scripts/audio.mjs` refait désormais tout fichier < 1 Ko, et ne
   renomme le `.part.m4a` que s'il dépasse cette taille. Fichier réparé.
@@ -228,11 +234,13 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   Écoute suivie vérifiée bout en bout : le verset 50 enchaîne bien sur le 51 et le réglage
   survit au rechargement. Build : **216 Ko, 5 fichiers**.
 - **Pas encore vérifié sur Safari**, aucun des trois designs.
-- Pour le test local, `public/audio/ca` est un **lien symbolique** vers `…/_web/ca` (évite de dupliquer 803 Mo).
+- Pour le test local, `public/audio/ca` et `public/audio/es` sont des **liens symboliques** vers
+  `…/_web/ca` et `…/_web/es` (évite de dupliquer 1,5 Go).
   `public/audio` est dans `.gitignore`. Attention : `npm run build` copierait ces 803 Mo dans `dist/` —
   enlever le lien avant un build, ou garder les audios hors de `public/` et passer par `VITE_AUDIO_BASE`.
-- **Disque du Mac serré** : 5,2 Go libres sur 228 (98 % plein). La source d'origine (1,2 Go) n'est plus
-  nécessaire une fois `_web/ca` en ligne.
+- **Disque du Mac serré** : 3,6 Gio libres sur 228 après la conversion espagnole. Les deux sources
+  d'origine (1,2 Go en catalan, 1,9 Go en espagnol) ne sont plus nécessaires une fois les dossiers
+  `_web` en ligne — c'est là qu'il faudra récupérer de la place avant le français.
 - Sur le serveur Hostinger, `wp-content/uploads/audios/` (FR/CAT/ES, ~3 Go de MP3 de livres entiers) a été créé
   lors d'une tâche précédente : sans rapport avec cette app, peut être supprimé.
 
