@@ -7,7 +7,6 @@ const messages = {
   ca: {
     work: 'El Missatge Retrobat',
     author: 'Louis Cattiaux',
-    tagline: 'Escolta allò que l’atzar posa avui al teu davant',
     drawHint: 'Prem el tallapapers per obrir un verset a l’atzar',
     drawAria: 'Obrir un verset a l’atzar',
     or: 'o bé',
@@ -36,12 +35,12 @@ const messages = {
     errAudio: 'No s’ha pogut reproduir l’àudio.',
     soon: 'Els àudios en aquesta llengua arribaran aviat.',
     tracks: (n: number) => `${n} àudios`,
+    shortcuts: 'Espai · lectura   ←→ · verset   R · atzar',
     langName: 'Català',
   },
   es: {
     work: 'El Mensaje Reencontrado',
     author: 'Louis Cattiaux',
-    tagline: 'Escucha lo que el azar pone hoy ante ti',
     drawHint: 'Pulsa el abrecartas para abrir un versículo al azar',
     drawAria: 'Abrir un versículo al azar',
     or: 'o bien',
@@ -70,12 +69,12 @@ const messages = {
     errAudio: 'No se ha podido reproducir el audio.',
     soon: 'Los audios en este idioma llegarán pronto.',
     tracks: (n: number) => `${n} audios`,
+    shortcuts: 'Espacio · lectura   ←→ · versículo   R · azar',
     langName: 'Español',
   },
   fr: {
     work: 'Le Message Retrouvé',
     author: 'Louis Cattiaux',
-    tagline: 'Écoute ce que le hasard place aujourd’hui devant toi',
     drawHint: 'Touche le coupe-papier pour ouvrir un verset au hasard',
     drawAria: 'Ouvrir un verset au hasard',
     or: 'ou bien',
@@ -104,6 +103,7 @@ const messages = {
     errAudio: 'Impossible de lire l’audio.',
     soon: 'Les audios dans cette langue arrivent bientôt.',
     tracks: (n: number) => `${n} audios`,
+    shortcuts: 'Espace · lecture   ←→ · verset   R · hasard',
     langName: 'Français',
   },
 } as const

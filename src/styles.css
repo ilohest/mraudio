@@ -1,46 +1,75 @@
+/*
+ * Brutalisme éditorial : papier blanc cassé, encre presque noire, un seul accent.
+ * Règles d'un pixel, angles vifs, aucun arrondi nulle part. La typographie fait le travail.
+ */
 :root {
-  --paper: #f1e9d8;
-  --paper-2: #f6f0e3;
-  --ink: #2f291f;
-  --muted: #7a6c55;
-  --line: rgb(47 41 31 / 0.15);
-  --gold: #b48a4a;
-  --rust: #9a4a2c;
-  --serif: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
-  --sans: 'Jost', 'Avenir Next', 'Helvetica Neue', system-ui, sans-serif;
+  --paper: #efeee9;
+  --ink: #121211;
+  --accent: #ff3b00;
+  --dim: #8c8c85;
+  --rule: #121211;
+  --hair: rgb(18 18 17 / 0.22);
+  --display: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --gutter: clamp(16px, 4vw, 40px);
   color-scheme: light;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0d0d0c;
+    --ink: #efeee9;
+    --dim: #76766f;
+    --rule: #efeee9;
+    --hair: rgb(239 238 233 / 0.24);
+    color-scheme: dark;
+  }
+}
 
-html {
+*, *::before, *::after { box-sizing: border-box; border-radius: 0; }
+
+html { background: var(--paper); }
+
+body {
+  margin: 0;
+  min-height: 100svh;
   background: var(--paper);
   color: var(--ink);
+  font-family: var(--mono);
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-body {
+/* Micro-libellé monospace : la signalétique de toute l'interface. */
+.micro {
   margin: 0;
-  font-family: var(--serif);
-  background:
-    radial-gradient(1200px 600px at 50% -10%, rgb(255 255 255 / 0.65), transparent 60%),
-    radial-gradient(900px 700px at 50% 120%, rgb(180 138 74 / 0.12), transparent 60%),
-    var(--paper);
-  min-height: 100svh;
+  font: 500 0.66rem/1 var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
 }
 
-/* Grain de papier très léger. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.35;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .27 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+/* Bouton brutaliste : bordure d'un pixel, inversion au survol, zéro transition molle. */
+.btn {
+  appearance: none;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font: 600 0.7rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 15px 18px;
+  cursor: pointer;
+  transition: background 0.12s linear, color 0.12s linear;
 }
+.btn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.btn:active:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { color: var(--dim); border-color: var(--hair); cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-#app { position: relative; }
+::selection { background: var(--accent); color: #fff; }
 
-::selection { background: rgb(180 138 74 / 0.3); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

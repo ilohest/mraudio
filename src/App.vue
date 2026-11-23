@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import LangSwitch from './components/LangSwitch.vue'
-import LetterOpener from './components/LetterOpener.vue'
+import DrawBar from './components/DrawBar.vue'
 import VersePicker from './components/VersePicker.vue'
 import NowPlaying from './components/NowPlaying.vue'
 import { lang, t } from './lib/i18n'
@@ -57,7 +57,7 @@ watch(
   { immediate: true },
 )
 
-/* Lien direct : #ca/7/56 · #es/0/0a · #ca/41/0 */
+/* Lien direct : #ca/7/56 · #ca/0/0b · #ca/41/0 */
 onMounted(() => {
   const [, b, v] = location.hash.replace('#', '').split('/')
   if (!b || !catalog.value) return
@@ -68,61 +68,54 @@ onMounted(() => {
   if (tr) open(tr, { autoplay: false })
 })
 
+/* Raccourcis clavier, annoncés en pied de page. */
 function onKey(e: KeyboardEvent) {
-  const tag = (e.target as HTMLElement).tagName
-  if (tag === 'INPUT' || tag === 'BUTTON' || e.metaKey || e.ctrlKey || e.altKey) return
+  const el = e.target as HTMLElement
+  const tag = el.tagName
+  if (tag === 'INPUT' || tag === 'BUTTON' || el.getAttribute('role') === 'slider') return
+  if (e.metaKey || e.ctrlKey || e.altKey) return
   if (e.code === 'Space' && player.track.value) { e.preventDefault(); player.toggle() }
+  else if (e.key === 'ArrowLeft' && hasPrev.value) { e.preventDefault(); step(-1) }
+  else if (e.key === 'ArrowRight' && hasNext.value) { e.preventDefault(); step(1) }
+  else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); draw() }
 }
 onMounted(() => addEventListener('keydown', onKey))
 </script>
 
 <template>
   <div class="page">
-    <header class="top">
-      <p class="brand">
-        <span class="mark" aria-hidden="true">✦</span>
-        <span>{{ t.author }}</span>
-      </p>
-      <LangSwitch />
+    <header class="masthead">
+      <div class="idbar">
+        <p class="micro">{{ t.author }}</p>
+        <LangSwitch />
+      </div>
+      <h1 class="title">{{ t.work }}</h1>
     </header>
 
-    <main class="main">
-      <section class="intro">
-        <h1 class="title">{{ t.work }}</h1>
-        <p class="tagline">{{ t.tagline }}</p>
+    <template v-if="catalog">
+      <section class="band"><DrawBar @draw="draw" /></section>
+
+      <section v-if="player.track.value" ref="stage" class="band">
+        <NowPlaying
+          :key="`${lang}-${player.track.value.id}`"
+          :track="player.track.value"
+          :drawn="drawn"
+          :has-prev="hasPrev"
+          :has-next="hasNext"
+          @prev="step(-1)"
+          @next="step(1)"
+          @again="draw"
+        />
       </section>
 
-      <template v-if="catalog">
-        <LetterOpener @draw="draw" />
+      <section class="band"><VersePicker :catalog="catalog" @pick="(tr) => open(tr)" /></section>
+    </template>
 
-        <div ref="stage" class="stage">
-          <Transition name="fade" mode="out-in">
-            <NowPlaying
-              v-if="player.track.value"
-              :key="lang"
-              :track="player.track.value"
-              :drawn="drawn"
-              :has-prev="hasPrev"
-              :has-next="hasNext"
-              @prev="step(-1)"
-              @next="step(1)"
-              @again="draw"
-            />
-          </Transition>
-        </div>
-
-        <div class="or" aria-hidden="true"><span>{{ t.or }}</span></div>
-
-        <VersePicker :catalog="catalog" @pick="(tr) => open(tr)" />
-      </template>
-
-      <p v-else class="soon">{{ t.soon }}</p>
-    </main>
+    <section v-else class="band"><p class="soon">{{ t.soon }}</p></section>
 
     <footer class="foot">
-      <span>{{ t.work }}</span>
-      <span aria-hidden="true">·</span>
       <span>{{ catalog ? t.tracks(catalog.tracks.length) : '—' }}</span>
+      <span class="keys">{{ t.shortcuts }}</span>
     </footer>
   </div>
 </template>
@@ -130,83 +123,62 @@ onMounted(() => addEventListener('keydown', onKey))
 <style scoped>
 .page {
   min-height: 100svh;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  width: min(720px, 100%);
-  margin: 0 auto;
-  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
 }
-.top {
+
+.idbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22px 0 0;
+  gap: 16px;
+  padding: 14px var(--gutter);
+  border-bottom: 1px solid var(--rule);
 }
-.brand {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font: 500 0.72rem/1 var(--sans);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.mark { color: var(--gold); font-size: 0.9rem; letter-spacing: 0; }
 
-.main {
-  display: grid;
-  align-content: start;
-  gap: 18px;
-  padding: clamp(28px, 7vh, 64px) 0 40px;
-}
-.intro { text-align: center; }
+.masthead { padding-bottom: clamp(26px, 5vw, 56px); }
+
+/* Le titre tient la page : capitales, graisse pleine, chasse resserrée. */
 .title {
-  margin: 0;
-  font: 400 clamp(2.3rem, 7vw, 3.6rem)/1.02 var(--serif);
-  letter-spacing: -0.01em;
-  color: var(--ink);
+  margin: clamp(26px, 6vw, 60px) 0 0;
+  padding: 0 var(--gutter);
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 112%;
+  font-size: clamp(2.6rem, 11.5vw, 8.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
 }
-.tagline {
-  margin: 12px auto 0;
-  max-width: 36ch;
-  text-wrap: balance;
-  font: italic 400 clamp(1.05rem, 2.6vw, 1.22rem)/1.4 var(--serif);
-  color: var(--muted);
-}
-.stage { display: grid; min-height: 0; scroll-margin: 24px; }
-.stage:empty { display: none; }
-
-.or {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 18px auto 4px;
-  width: min(360px, 80%);
-  font: italic 0.95rem var(--serif);
-  color: var(--muted);
-}
-.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.band { border-top: 1px solid var(--rule); }
 
 .soon {
-  margin: 40px auto;
+  margin: 0;
+  padding: clamp(40px, 9vw, 90px) var(--gutter);
   max-width: 34ch;
-  text-wrap: balance;
-  text-align: center;
-  font: italic 1.2rem/1.5 var(--serif);
-  color: var(--muted);
+  font: 500 0.8rem/1.7 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
 }
 
 .foot {
+  margin-top: auto;
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 18px 0 26px;
-  font: 0.7rem var(--sans);
-  letter-spacing: 0.08em;
-  color: rgb(122 108 85 / 0.7);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px var(--gutter);
+  border-top: 1px solid var(--rule);
+  font: 500 0.62rem/1.4 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
 }
+.keys { text-transform: none; letter-spacing: 0.1em; }
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.25s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+@media (max-width: 620px) {
+  .keys { display: none; }
+}
 </style>

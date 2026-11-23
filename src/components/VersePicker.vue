@@ -18,7 +18,6 @@ const book = computed(() => parseBook(bookInput.value))
 const range = computed(() => (book.value !== null ? props.catalog.range(book.value) : null))
 const bookOk = computed(() => book.value !== null && book.value >= FIRST_BOOK && book.value <= LAST_BOOK && !!range.value)
 
-/** Indication vivante sous le champ livre : « VII · 0–65 ». */
 const bookHint = computed(() => {
   if (!bookInput.value.trim()) return `I – ${toRoman(LAST_BOOK)}`
   if (!bookOk.value || !range.value) return '—'
@@ -73,11 +72,11 @@ const hasLitanies = computed(() => props.catalog.versesOf(LITANIES_BOOK).length 
 
 <template>
   <form class="picker" @submit.prevent="submit" novalidate>
-    <h2 class="eyebrow">{{ t.chooseTitle }}</h2>
+    <p class="micro head">{{ t.chooseTitle }}</p>
 
-    <div class="row">
-      <label class="field">
-        <span class="label">{{ t.book }}</span>
+    <div class="grid">
+      <label class="cell">
+        <span class="micro">{{ t.book }}</span>
         <input
           v-model="bookInput"
           class="num"
@@ -92,13 +91,11 @@ const hasLitanies = computed(() => props.catalog.versesOf(LITANIES_BOOK).length 
           @input="onBookInput"
           @keydown="onBookKey"
         />
-        <span class="hint" :class="{ bad: !!bookInput.trim() && !bookOk }">{{ bookHint }}</span>
+        <span class="micro hint" :class="{ bad: !!bookInput.trim() && !bookOk }">{{ bookHint }}</span>
       </label>
 
-      <span class="sep" aria-hidden="true">·</span>
-
-      <label class="field">
-        <span class="label">{{ t.verse }}</span>
+      <label class="cell">
+        <span class="micro">{{ t.verse }}</span>
         <input
           ref="verseEl"
           v-model="verseInput"
@@ -111,131 +108,111 @@ const hasLitanies = computed(() => props.catalog.versesOf(LITANIES_BOOK).length 
           placeholder="56"
           @input="message = ''"
         />
-        <span class="hint">{{ range ? `${range[0]} – ${range[1]}` : '&nbsp;' }}</span>
+        <span class="micro hint">{{ range ? `${range[0]} – ${range[1]}` : '&nbsp;' }}</span>
       </label>
 
-      <button class="go" type="submit" :aria-label="t.listen">
+      <button class="cell go" type="submit" :aria-label="t.listen">
         <span>{{ t.listen }}</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
+        <span class="arrow" aria-hidden="true">⟶</span>
       </button>
     </div>
 
     <p class="msg" role="status" aria-live="polite">{{ message }}</p>
 
     <p v-if="hasPrelim || hasLitanies" class="also">
-      <span>{{ t.also }}</span>
-      <button v-if="hasPrelim" type="button" class="chip" @click="pickSpecial(PRELIM_BOOK)">{{ t.preliminary }}</button>
-      <button v-if="hasLitanies" type="button" class="chip" @click="pickSpecial(LITANIES_BOOK)">{{ t.litanies }}</button>
+      <span class="micro">{{ t.also }}</span>
+      <button v-if="hasPrelim" type="button" class="btn chip" @click="pickSpecial(PRELIM_BOOK)">{{ t.preliminary }}</button>
+      <button v-if="hasLitanies" type="button" class="btn chip" @click="pickSpecial(LITANIES_BOOK)">{{ t.litanies }}</button>
     </p>
   </form>
 </template>
 
 <style scoped>
-.picker { display: grid; justify-items: center; gap: 4px; }
-.eyebrow {
-  margin: 0 0 14px;
-  font: 500 0.72rem/1 var(--sans);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--muted);
+.picker { padding: clamp(20px, 3.5vw, 32px) 0 clamp(22px, 4vw, 36px); }
+.head { padding: 0 var(--gutter) 16px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1px;
+  background: var(--hair);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
 }
-.row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 14px;
-  flex-wrap: wrap;
+.cell {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  background: var(--paper);
+  padding: 14px var(--gutter) 13px;
+  min-width: 0;
 }
-.field { display: grid; justify-items: center; gap: 4px; }
-.label {
-  font: 500 0.66rem/1 var(--sans);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
+
 .num {
-  width: 5.2ch;
-  font: 400 2.4rem/1.1 var(--serif);
-  text-align: center;
+  width: 100%;
+  min-width: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 112%;
+  font-size: clamp(2.2rem, 7vw, 3.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
   color: var(--ink);
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  padding: 4px 0 6px;
-  border-radius: 0;
-  transition: border-color 0.25s;
+  padding: 0;
+  font-variant-numeric: tabular-nums lining-nums;
 }
-.num::placeholder { color: rgb(47 41 31 / 0.18); }
-.num:focus { outline: none; border-bottom-color: var(--gold); }
-.num[aria-invalid='true'] { border-bottom-color: var(--rust); }
-.hint {
-  font: 0.72rem/1.2 var(--sans);
-  color: var(--muted);
-  min-height: 1.2em;
-  font-variant-numeric: tabular-nums;
-}
-.hint.bad { color: var(--rust); }
-.sep {
-  align-self: center;
-  margin-top: 6px;
-  font: 1.6rem var(--serif);
-  color: var(--gold);
-}
+.num::placeholder { color: var(--hair); }
+.num:focus { outline: none; }
+.cell:focus-within { background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
+.num[aria-invalid='true'] { color: var(--accent); }
+.hint { font-size: 0.6rem; }
+.hint.bad { color: var(--accent); }
+
 .go {
-  align-self: center;
-  margin-top: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   appearance: none;
-  border: 1px solid var(--ink);
+  border: 0;
   background: var(--ink);
   color: var(--paper);
-  font: 500 0.78rem/1 var(--sans);
-  letter-spacing: 0.08em;
-  padding: 12px 16px 12px 18px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.25s, transform 0.2s;
-}
-.go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; transition: transform 0.25s; }
-.go:hover { background: #3d352a; }
-.go:hover svg { transform: translateX(3px); }
-.go:active { transform: scale(0.97); }
-.go:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
-.msg {
-  margin: 6px 0 0;
-  min-height: 1.3em;
-  font: italic 0.95rem var(--serif);
-  color: var(--rust);
-}
-.also {
-  margin: 2px 0 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
   justify-content: center;
-  font: 0.75rem var(--sans);
-  color: var(--muted);
-}
-.chip {
-  appearance: none;
-  border: 1px solid var(--line);
-  background: rgb(255 255 255 / 0.3);
-  color: var(--ink);
-  font: italic 0.95rem/1 var(--serif);
-  padding: 6px 12px 7px;
-  border-radius: 999px;
+  gap: 14px;
+  padding: 14px clamp(18px, 3vw, 32px);
+  font: 600 0.7rem/1 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: border-color 0.25s, background 0.25s;
+  transition: background 0.12s linear;
 }
-.chip:hover { border-color: var(--gold); background: rgb(255 255 255 / 0.55); }
-.chip:focus-visible { outline: 1px solid var(--gold); outline-offset: 2px; }
+.go .arrow { font-size: 1.2rem; transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.go:hover { background: var(--accent); color: #fff; }
+.go:hover .arrow { transform: translateX(8px); }
+.go:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 
-@media (max-width: 480px) {
-  .row { gap: 10px; }
-  .go { flex-basis: 100%; justify-content: center; margin-top: 10px; }
-  .go span { display: inline; }
+.msg {
+  margin: 0;
+  min-height: 1.4em;
+  padding: 12px var(--gutter) 0;
+  font: 500 0.68rem/1.4 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.also {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  padding: 0 var(--gutter);
+}
+.chip { padding: 10px 14px; }
+
+@media (max-width: 620px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .go { grid-column: 1 / -1; }
 }
 </style>

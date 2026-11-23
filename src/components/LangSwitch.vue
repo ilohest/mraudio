@@ -18,27 +18,19 @@ import { LANGS, lang, setLang } from '../lib/i18n'
 </template>
 
 <style scoped>
-.langs {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.35);
-}
+.langs { display: flex; }
 button {
   appearance: none;
   border: 0;
-  background: none;
-  font: 500 0.72rem/1 var(--sans);
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  padding: 7px 11px 6px;
-  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font: 500 0.66rem/1 var(--mono);
+  letter-spacing: 0.2em;
+  padding: 6px 9px;
   cursor: pointer;
-  transition: background 0.25s, color 0.25s;
+  transition: color 0.12s linear, background 0.12s linear;
 }
 button:hover { color: var(--ink); }
 button.on { background: var(--ink); color: var(--paper); }
-button:focus-visible { outline: 1px solid var(--gold); outline-offset: 2px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 </style>

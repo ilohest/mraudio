@@ -12,8 +12,10 @@ const emit = defineEmits<{ prev: []; next: []; again: [] }>()
 const { playing, loading, error, current, duration, toggle, restart, seek } = usePlayer()
 
 const label = computed(() => labelFor(props.track, t.value))
+/* « Epígrafs » n'est pas un nombre : il ne mérite pas la taille des chiffres. */
+const verseIsWord = computed(() => !!label.value.verse && !/^\d+$/.test(label.value.verse))
 
-/* Petit effet « roue » : pendant un tirage, les numéros défilent avant de se poser. */
+/* Tirage : les chiffres défilent avant de se poser. Ici c'est la typo qui fait l'animation. */
 const rolling = ref(false)
 const rollBig = ref('')
 const rollVerse = ref('')
@@ -30,17 +32,24 @@ watch(
     timer = window.setInterval(() => {
       rollBig.value = toRoman(1 + Math.floor(Math.random() * 40))
       rollVerse.value = String(1 + Math.floor(Math.random() * 99))
-      if (performance.now() - start > 650) {
+      if (performance.now() - start > 620) {
         clearInterval(timer)
         rolling.value = false
       }
-    }, 55)
+    }, 50)
   },
   { immediate: true },
 )
 onBeforeUnmount(() => clearInterval(timer))
 
 const big = computed(() => (rolling.value ? rollBig.value : label.value.big))
+/* XXXVIII est trois fois plus long que VII : la taille suit le nombre de signes,
+   sinon le chiffre romain se casse en deux lignes. */
+const bigSize = computed(() => {
+  if (!label.value.numeral) return ''
+  const n = big.value.length
+  return n >= 6 ? 'len-xl' : n >= 4 ? 'len-l' : ''
+})
 const verse = computed(() => (rolling.value ? rollVerse.value : label.value.verse))
 const progress = computed(() => (duration.value ? current.value / duration.value : 0))
 
@@ -60,8 +69,8 @@ function up() { dragging = false }
 function barKey(e: KeyboardEvent) {
   if (!duration.value) return
   const step = 5 / duration.value
-  if (e.key === 'ArrowRight') seek(progress.value + step)
-  if (e.key === 'ArrowLeft') seek(progress.value - step)
+  if (e.key === 'ArrowRight') { e.preventDefault(); seek(progress.value + step) }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); seek(progress.value - step) }
 }
 
 const copied = ref(false)
@@ -75,263 +84,182 @@ async function share() {
 </script>
 
 <template>
-  <article class="card" :class="{ drawn }">
-    <header class="ref">
-      <p class="kicker">{{ label.kicker }}</p>
-      <p class="big" :class="{ numeral: label.numeral, rolling }">{{ big }}</p>
-      <p v-if="verse" class="verse">
-        <span v-if="label.verseLabel" class="vl">{{ label.verseLabel }}</span>
-        <span class="vn" :class="{ word: !label.verseLabel, rolling }">{{ verse }}</span>
-      </p>
-    </header>
-
-    <div class="player">
-      <button
-        class="play"
-        type="button"
-        :class="{ loading: loading && !error }"
-        :aria-label="playing ? t.pause : t.play"
-        :disabled="error"
-        @click="toggle"
-      >
-        <svg v-if="playing" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.2" height="13" rx="1" /><rect x="13.8" y="5.5" width="3.2" height="13" rx="1" /></svg>
-        <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.8v12.4a.8.8 0 0 0 1.2.7l9.7-6.2a.8.8 0 0 0 0-1.4L9.7 5.1a.8.8 0 0 0-1.2.7Z" /></svg>
-      </button>
-
-      <div class="track">
-        <div
-          ref="bar"
-          class="bar"
-          role="slider"
-          tabindex="0"
-          :aria-valuemin="0"
-          :aria-valuemax="Math.round(duration)"
-          :aria-valuenow="Math.round(current)"
-          :aria-valuetext="formatTime(current)"
-          @pointerdown="down"
-          @pointermove="move"
-          @pointerup="up"
-          @pointercancel="up"
-          @keydown="barKey"
-        >
-          <span class="fill" :style="{ transform: `scaleX(${progress})` }"></span>
-          <span class="knob" :style="{ left: `${progress * 100}%` }"></span>
-        </div>
-        <div class="times">
-          <span>{{ formatTime(current) }}</span>
-          <span>{{ formatTime(duration) }}</span>
-        </div>
+  <article class="now">
+    <!-- Le repère, en très grand : c'est lui le visuel. -->
+    <div class="hero" :class="{ solo: !verse }">
+      <div class="slot">
+        <p class="micro">{{ label.kicker }}</p>
+        <p class="mega" :class="[bigSize, { word: !label.numeral, rolling }]">{{ big }}</p>
+      </div>
+      <div v-if="verse" class="slot verse">
+        <p class="micro">{{ label.verseLabel || '&nbsp;' }}</p>
+        <p class="mega accent" :class="{ word: verseIsWord, rolling }">{{ verse }}</p>
       </div>
     </div>
 
-    <p v-if="error" class="err" role="alert">{{ t.errAudio }}</p>
+    <!-- Progression : un filet qui traverse toute la page et s'épaissit quand on le vise. -->
+    <div
+      ref="bar"
+      class="scrub"
+      :class="{ busy: loading && !error }"
+      role="slider"
+      tabindex="0"
+      :aria-label="t.verse"
+      :aria-valuemin="0"
+      :aria-valuemax="Math.round(duration)"
+      :aria-valuenow="Math.round(current)"
+      :aria-valuetext="formatTime(current)"
+      @pointerdown="down"
+      @pointermove="move"
+      @pointerup="up"
+      @pointercancel="up"
+      @keydown="barKey"
+    >
+      <span class="elapsed" :style="{ width: `${progress * 100}%` }"></span>
+    </div>
 
-    <nav class="actions">
-      <button type="button" class="icon" :disabled="!hasPrev" :aria-label="t.prev" :title="t.prev" @click="emit('prev')">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6" /></svg>
+    <p class="times">
+      <span>{{ formatTime(current) }}</span>
+      <span v-if="error" class="err" role="alert">{{ t.errAudio }}</span>
+      <span>{{ formatTime(duration) }}</span>
+    </p>
+
+    <!-- Grille de commandes : les filets sont les gouttières, pas des bordures. -->
+    <nav class="controls">
+      <button type="button" class="primary" :disabled="error" @click="toggle">
+        {{ playing ? t.pause : t.play }}
       </button>
-      <button type="button" class="icon" :aria-label="t.replay" :title="t.replay" @click="restart">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v3.5H8" /></svg>
-      </button>
-      <button type="button" class="icon" :disabled="!hasNext" :aria-label="t.next" :title="t.next" @click="emit('next')">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6" /></svg>
-      </button>
-      <span class="divider" aria-hidden="true"></span>
-      <button type="button" class="text" @click="emit('again')">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4 0 5 10 9 10H21m0 0-3-3m3 3-3 3M3 17h3.5c1.4 0 2.4-1.2 3.3-2.8M21 7h-5.5c-1.4 0-2.4 1.2-3.3 2.8M21 7l-3-3m3 3-3 3" /></svg>
-        {{ t.again }}
-      </button>
-      <button type="button" class="icon" :aria-label="t.share" :title="copied ? t.copied : t.share" @click="share">
-        <svg v-if="!copied" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></svg>
-        <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-      </button>
+      <button type="button" :disabled="!hasPrev" @click="emit('prev')">{{ t.prev }}</button>
+      <button type="button" @click="restart">{{ t.replay }}</button>
+      <button type="button" :disabled="!hasNext" @click="emit('next')">{{ t.next }}</button>
+      <button type="button" @click="emit('again')">{{ t.again }}</button>
+      <button type="button" @click="share">{{ copied ? t.copied : t.share }}</button>
     </nav>
   </article>
 </template>
 
 <style scoped>
-.card {
-  position: relative;
-  width: min(520px, 100%);
-  margin: 0 auto;
-  padding: 30px 28px 18px;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.25)),
-    var(--paper-2);
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.7) inset, 0 24px 50px -28px rgb(60 42 18 / 0.45);
-  animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-.card.drawn { animation: unseal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
-@keyframes unseal {
-  from { opacity: 0; clip-path: inset(50% 0 50% 0 round 22px); }
-  to { opacity: 1; clip-path: inset(0 0 0 0 round 22px); }
-}
+.now { display: block; }
 
-.ref { text-align: center; }
-.kicker {
-  margin: 0;
-  font: 500 0.68rem/1 var(--sans);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.big {
-  margin: 8px 0 0;
-  font: 400 clamp(2.4rem, 8vw, 3.4rem)/1 var(--serif);
-  color: var(--ink);
-}
-.big.numeral {
-  font-size: clamp(3.6rem, 14vw, 5.4rem);
-  letter-spacing: 0.06em;
-  font-variant-numeric: lining-nums;
-}
-.rolling { color: var(--gold); filter: blur(0.3px); }
-.verse {
-  margin: 10px 0 0;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-.vl {
-  font: 500 0.68rem/1 var(--sans);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.vn {
-  font: italic 400 2rem/1 var(--serif);
-  color: var(--rust);
-  min-width: 2ch;
-  font-variant-numeric: tabular-nums;
-}
-.vn.word { font-size: 1.5rem; }
-
-.player {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 26px;
-}
-.play {
-  flex: none;
-  width: 56px;
-  height: 56px;
+.hero {
   display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.2s, background 0.25s;
+  grid-template-columns: 1fr 1fr;
+  animation: cut 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.play svg { width: 24px; height: 24px; fill: currentColor; }
-.play:hover:not(:disabled) { background: #3d352a; transform: scale(1.04); }
-.play:active:not(:disabled) { transform: scale(0.96); }
-.play:disabled { opacity: 0.35; cursor: default; }
-.play:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
-.play.loading::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid transparent;
-  border-top-color: var(--gold);
-  animation: spin 0.9s linear infinite;
+.hero.solo { grid-template-columns: 1fr; }
+@keyframes cut {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
 }
-@keyframes spin { to { transform: rotate(1turn); } }
 
-.track { flex: 1; min-width: 0; }
-.bar {
-  position: relative;
-  height: 22px;
-  cursor: pointer;
-  touch-action: none;
+.slot {
+  padding: clamp(20px, 3.5vw, 34px) var(--gutter) clamp(14px, 2.5vw, 26px);
+  min-width: 0;
 }
-.bar::before, .fill {
+.slot.verse { border-left: 1px solid var(--rule); }
+
+.mega {
+  margin: 10px 0 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-stretch: 112%;
+  font-size: clamp(3.6rem, 17vw, 11rem);
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+/* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
+.mega.len-l { font-size: clamp(2.8rem, 12vw, 7.5rem); }
+.mega.len-xl { font-size: clamp(2.2rem, 9.5vw, 6rem); }
+
+/* Un nom (« Pare Daurat ») ou un mot (« Epígrafs ») : même famille, autre échelle. */
+.mega.word {
+  white-space: normal;
+  font-size: clamp(1.8rem, 6vw, 4rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  font-stretch: 100%;
+}
+.mega.accent { color: var(--accent); }
+.mega.rolling { color: var(--dim); }
+
+.scrub {
+  position: relative;
+  height: 26px;
+  border-top: 1px solid var(--rule);
+  cursor: ew-resize;
+  touch-action: none;
+  display: flex;
+  align-items: flex-start;
+}
+.scrub .elapsed {
+  display: block;
+  height: 3px;
+  margin-top: -2px;
+  background: var(--accent);
+  transition: height 0.12s linear, margin-top 0.12s linear;
+}
+.scrub:hover .elapsed, .scrub:focus-visible .elapsed { height: 9px; margin-top: -5px; }
+.scrub:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.scrub.busy::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  margin-top: -1px;
-  border-radius: 2px;
-  background: var(--line);
+  inset: -1px auto auto 0;
+  height: 3px;
+  width: 18%;
+  background: var(--ink);
+  animation: slide 1.1s ease-in-out infinite;
 }
-.fill { background: var(--ink); transform-origin: left; }
-.knob {
-  position: absolute;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
-  border-radius: 50%;
-  background: var(--paper);
-  border: 1.5px solid var(--ink);
-  transition: transform 0.2s;
-}
-.bar:hover .knob, .bar:focus-visible .knob { transform: scale(1.25); }
-.bar:focus-visible { outline: none; }
+@keyframes slide { to { transform: translateX(455%); } }
+
 .times {
   display: flex;
   justify-content: space-between;
-  font: 0.72rem var(--sans);
-  color: var(--muted);
+  gap: 16px;
+  margin: 0;
+  padding: 9px var(--gutter) 16px;
+  font: 500 0.68rem/1.2 var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--dim);
   font-variant-numeric: tabular-nums;
 }
+.err { color: var(--accent); text-transform: uppercase; letter-spacing: 0.14em; }
 
-.err {
-  margin: 12px 0 0;
-  text-align: center;
-  font: italic 0.95rem var(--serif);
-  color: var(--rust);
-}
-
-.actions {
+/* Flex plutôt que grille : la dernière rangée s'étire au lieu de laisser une case vide. */
+.controls {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 18px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+  gap: 1px;
+  background: var(--hair);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
 }
-.actions button {
+.controls button {
   appearance: none;
+  flex: 1 1 118px;
+  min-width: 0;
   border: 0;
-  background: none;
+  background: var(--paper);
   color: var(--ink);
+  font: 600 0.66rem/1.35 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 16px 10px;
   cursor: pointer;
-  border-radius: 999px;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.12s linear, color 0.12s linear;
 }
-.actions button:hover:not(:disabled) { background: rgb(47 41 31 / 0.06); }
-.actions button:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
-.actions button:disabled { opacity: 0.25; cursor: default; }
-.actions svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.icon { width: 38px; height: 38px; display: grid; place-items: center; }
-.text {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
-  font: 500 0.78rem/1 var(--sans);
-  letter-spacing: 0.04em;
-}
-.divider { width: 1px; height: 18px; background: var(--line); margin: 0 6px; }
+.controls button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.controls button:active:not(:disabled) { background: var(--accent); color: #fff; }
+.controls button:disabled { color: var(--dim); cursor: default; }
+.controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.controls .primary { flex: 2 1 236px; background: var(--ink); color: var(--paper); }
+.controls .primary:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.controls .primary:disabled { background: var(--hair); }
 
-@media (max-width: 480px) {
-  .card { padding: 26px 18px 14px; border-radius: 18px; }
-  .divider { display: none; }
-  .actions { gap: 0; }
-  .icon { width: 36px; }
-  .text { padding: 9px 10px; }
+@media (max-width: 620px) {
+  .hero { grid-template-columns: 1fr; }
+  .slot.verse { border-left: 0; border-top: 1px solid var(--hair); }
+  .controls .primary { flex-basis: 100%; }
 }
 </style>

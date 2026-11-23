@@ -8,20 +8,43 @@ Trilingue CA / ES / FR (UI + jeu d'audios par langue). Site cible : louiscattiau
 Reprise d'un prototype « La Quête / Oracle d'àudio V7 » (HTML + script PowerShell Windows, en catalan).
 
 ## Stack
-Vue 3 + Vite + TypeScript, sans routeur ni lib i18n (petit dictionnaire maison). Polices auto-hébergées via @fontsource
-(Cormorant Garamond + Jost). Build statique (`base: './'`) → se dépose dans n'importe quel sous-dossier.
+Vue 3 + Vite + TypeScript, sans routeur ni lib i18n (petit dictionnaire maison). Polices auto-hébergées via @fontsource.
+Build statique (`base: './'`) → se dépose dans n'importe quel sous-dossier.
 `npm run build:single` → un seul HTML (vite-plugin-singlefile), pratique pour aperçu / iframe.
+
+## Design — « brutalisme éditorial » (23/11/2026)
+Le premier design (ivoire, Cormorant Garamond, coupe-papier en photo) a été **remplacé à la demande d'Isaure**.
+Il reste accessible dans git, commit `bc9b8dd`.
+
+Principes, à respecter pour toute évolution :
+- **Aucun arrondi, nulle part** (`border-radius: 0` est posé sur `*` dans `styles.css`). Pas d'ombre portée.
+- Filets d'un pixel comme seul séparateur ; les sections sont des bandes à pleine largeur (`.band`).
+- **Une seule couleur d'accent**, le vermillon `#ff3b00` : numéro du verset, progression, états actifs. Rien d'autre.
+- Papier `#efeee9`, encre `#121211`, plus un **mode sombre** automatique (`prefers-color-scheme`).
+- Deux familles : **Archivo Variable** (axes graisse *et* largeur) pour la typo démesurée, **JetBrains Mono Variable**
+  pour toute la signalétique (libellés, boutons, minutages) — toujours en capitales, interlettrage large.
+- Le survol **inverse** le bloc (fond encre, texte papier) ; le clic passe à l'accent. Transitions linéaires, 0,12 s.
+- Les repères (`VII`, `56`) sont l'élément visuel principal : il n'y a pas d'illustration.
+
+Détails à ne pas casser :
+- La taille du chiffre romain suit sa longueur (`len-l`, `len-xl` dans `NowPlaying.vue`) : sans ça `XXXVIII` se coupe
+  en deux lignes. Les chiffres sont en `white-space: nowrap`, mais les **noms** (« Pare Daurat ») gardent le droit
+  de passer à la ligne.
+- La barre de commandes est en **flex**, pas en grille : en grille, la dernière rangée laissait une case vide grise
+  sur mobile.
+- Raccourcis clavier : espace (lecture), ← → (verset), R (tirage). Annoncés en pied de page via `t.shortcuts`.
 
 ## Structure
 - `src/lib/catalog.ts` — charge `src/data/manifest.<lang>.json` (embarqués au build), URL audio, voisins, tirage.
 - `src/lib/i18n.ts` — textes CA/ES/FR, langue via hash > localStorage > navigateur.
 - `src/lib/labels.ts` — libellés (Llibre VII · Verset 56, Epígrafs, Preliminars, Lletanies).
 - `src/composables/usePlayer.ts` — un seul `Audio()` global, état réactif.
-- `src/components/` — LetterOpener (bouton tirage), VersePicker (saisie), NowPlaying (carte + lecteur), LangSwitch.
+- `src/components/` — DrawBar (bande de tirage), VersePicker (saisie), NowPlaying (repère + lecteur), LangSwitch.
 - `scripts/audio.mjs` — génère le manifeste et convertit les audios (ffmpeg).
 - `scripts/screens.py` — captures Playwright de vérification (serveur sur :4173).
 
-Liens directs : `#ca/7/56`, `#ca/0/0a` (préliminaires partie a), `#ca/41/0` (litanies).
+Liens directs : `#ca/7/56`, `#ca/0/0b` (Pare Daurat), `#ca/41/0` (litanies).
+Ils ne sont lus qu'au chargement : changer le hash à la main ne rafraîchit pas l'affichage, il faut recharger.
 
 ## Audios
 Nommage : `LLVVV` = livre (2 chiffres) + verset (3 chiffres). Verset 000 = épigraphes.
@@ -61,6 +84,8 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   renomme le `.part.m4a` que s'il dépasse cette taille. Fichier réparé.
 - Testé en local avec les vrais audios (Chromium) : lecture, tirage, verset précédent / suivant, liens directs
   `#ca/7/56`, `#ca/0/0b`, livres récemment convertis (XL). Console propre.
+- Nouveau design vérifié en clair et en sombre, en 1149 px et en 375 px. Build : 444 Ko, 13 fichiers.
+- **Pas encore vérifié sur Safari** (ni l'ancien design, ni le nouveau).
 - Pour le test local, `public/audio/ca` est un **lien symbolique** vers `…/_web/ca` (évite de dupliquer 803 Mo).
   `public/audio` est dans `.gitignore`. Attention : `npm run build` copierait ces 803 Mo dans `dist/` —
   enlever le lien avant un build, ou garder les audios hors de `public/` et passer par `VITE_AUDIO_BASE`.
