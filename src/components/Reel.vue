@@ -55,7 +55,7 @@ const vars = computed(() => ({
 .reel {
   display: block;
   width: 100%;
-  height: 1.08em;
+  height: 1.12em;
   overflow: hidden;
   filter: blur(3px);
   mask-image: linear-gradient(to bottom, transparent 0%, #000 26%, #000 74%, transparent 100%);
@@ -75,7 +75,7 @@ const vars = computed(() => ({
 .cell {
   display: flex;
   align-items: center;
-  height: 1.08em;
+  height: 1.12em;
   line-height: 1;
 }
 .sr {

@@ -246,7 +246,7 @@ const chainOpts = computed(() => [
 </script>
 
 <template>
-  <article class="now">
+  <article class="now" :class="{ idle: !track }">
     <p v-if="standing" class="standing">
       <span v-if="standing.kicker" class="micro">{{ standing.kicker }}</span>
       <span class="name">{{ standing.name }}</span>
@@ -445,6 +445,25 @@ const chainOpts = computed(() => [
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  /**
+   * Hauteur qu'occupe tout ce qui entoure le nombre dans une case : les deux marges
+   * intérieures, l'intitulé, l'écart du champ, son filet, la ligne d'indication.
+   * `--fit` est donc la plus grande taille de nombre qui tient dans la place restante.
+   * Sans ce calcul, le nombre se dimensionnait sur la hauteur de toute la carte, rail et
+   * commandes compris : le contenu débordait de sa case, se centrait, et venait coller au rail.
+   */
+  --around: calc(2 * var(--pad) + 3.8rem);
+  --fit: calc((100cqh - var(--around)) / 1.12);
+}
+/**
+ * Le repère ne mesure sa propre hauteur que là où il en a une d'imposée : la vue tient
+ * l'écran ET un verset joue. Tant que rien ne joue, la carte suit son contenu — mesurer
+ * sa hauteur reviendrait à la lui retirer, et le repère s'effondrerait à zéro.
+ * Dans ce cas `--fit` retombe sur la hauteur du viewport, assez grande pour ne jamais
+ * commander, et c'est la largeur qui décide.
+ */
+@media (min-width: 340px) and (min-height: 620px) {
+  .now:not(.idle) .hero { container-type: size; }
 }
 .hero.shaking { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @keyframes shake {
@@ -503,16 +522,24 @@ const chainOpts = computed(() => [
   color: var(--ink);
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(2.2rem, min(15cqi, 28cqh), 8.5rem);
+  font-size: clamp(2.2rem, min(15cqi, var(--fit)), 8.5rem);
   line-height: 0.95;
   letter-spacing: -0.012em;
   font-variant-numeric: lining-nums;
 }
+/**
+ * Hauteur imposée, et la même que celle d'une case de rouleau. Deux raisons : un champ de
+ * saisie ne fait pas la hauteur de son interligne — il suit les métriques de la fonte, ici
+ * 1,42 fois le corps contre 0,95 demandé — ce qui faussait le calcul de `--fit` et faisait
+ * déborder le repère sur le rail ; et sans elle, le passage du rouleau au champ à la fin
+ * d'un tirage décalait la mise en page.
+ */
+input.mega { height: 1.12em; }
 .mega:focus { outline: none; }
 .mega::placeholder { color: var(--line); }
 /* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
-.mega.len-l { font-size: clamp(1.9rem, min(11.5cqi, 22cqh), 6.4rem); }
-.mega.len-xl { font-size: clamp(1.5rem, min(9cqi, 17.5cqh), 5rem); }
+.mega.len-l { font-size: clamp(1.9rem, min(11.5cqi, var(--fit)), 6.4rem); }
+.mega.len-xl { font-size: clamp(1.5rem, min(9cqi, var(--fit)), 5rem); }
 
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }
@@ -530,8 +557,8 @@ const chainOpts = computed(() => [
   gap: 12px;
   border: 1px solid var(--ink);
   border-radius: var(--r-sm);
-  background: var(--bg);
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
   padding: 17px 20px;
   font: 400 1.05rem/1.2 var(--sans);
   cursor: pointer;
@@ -540,7 +567,7 @@ const chainOpts = computed(() => [
     background 0.2s ease,
     color 0.2s ease;
 }
-.go:hover { background: var(--ink); color: var(--bg); transform: translateY(-3px); }
+.go:hover { background: var(--rubric); border-color: var(--rubric); transform: translateY(-3px); }
 .go:active { transform: scale(0.98); }
 .go:focus-visible { outline: 3px solid var(--rubric-deep); outline-offset: 3px; }
 

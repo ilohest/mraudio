@@ -109,7 +109,7 @@ onMounted(() => addEventListener('keydown', onKey))
 
       <DrawBar v-if="catalog" @draw="draw" />
 
-      <main ref="stage" class="card pane">
+      <main ref="stage" class="card pane" :class="{ idle: !player.track.value }">
       <NowPlaying
         v-if="catalog"
         :key="`${lang}-${player.track.value?.id ?? 'buit'}`"
@@ -145,7 +145,7 @@ onMounted(() => addEventListener('keydown', onKey))
         <p class="credit end">
           <span class="tag">{{ t.madeBy }}</span>
           <a class="link" href="https://isaure-lohest.com/" target="_blank" rel="noopener noreferrer">
-            Isaure Lohest
+            Isaure
             <svg class="out" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
                 d="M7.5 16.5 16.5 7.5M9.6 7.5h6.9v6.9"
@@ -222,6 +222,13 @@ onMounted(() => addEventListener('keydown', onKey))
     min-height: 0;
     container-type: size;
   }
+  /* Tant que rien ne joue, la carte ne contient qu'une saisie : l'étirer sur toute la
+     hauteur laissait les deux champs flotter au milieu d'un grand vide et donnait au filet
+     qui les sépare une longueur sans rapport avec ce qu'il sépare. Elle suit son contenu. */
+  .pane.idle {
+    flex: 0 0 auto;
+    container-type: inline-size;
+  }
 }
 
 .soon {
@@ -261,16 +268,19 @@ onMounted(() => addEventListener('keydown', onKey))
   padding-top: 15px;
   border-top: 1px solid var(--line);
 }
+/* Intitulé et nom sur une seule ligne. */
 .credit {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 10px;
   margin: 0;
   min-width: 0;
 }
 .credit.end {
   margin-left: auto;
+  justify-content: flex-end;
   text-align: right;
-  justify-items: end;
 }
 .tag { font-size: 0.78rem; }
 .names { color: var(--ink); }

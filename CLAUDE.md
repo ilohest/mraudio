@@ -105,9 +105,31 @@ Piège de performance : le flou va sur la **fenêtre** du rouleau, jamais sur la
 fait plusieurs milliers de pixels de haut, et la tramer floue retardait le départ d'une seconde
 entière (mesuré).
 
-**Icônes** (`Icon.vue`) : dessinées à la main, pas de bibliothèque. Piège rencontré deux fois :
-sur une flèche circulaire, **la pointe se place à l'arrivée du tracé, pas à son départ**, sinon
-elle désigne le sens inverse de la rotation.
+**Icônes** (`Icon.vue`) : dessinées à la main, sauf la reprise. Celle-là vient de Lucide
+(`rotate-ccw`, licence ISC) après deux tentatives ratées — flèche à l'envers, puis illisible.
+Leçon générale : **regarder une icône en grand avant de la livrer**, un gabarit servi par le
+serveur de dev suffit. Et sur une flèche circulaire, la pointe se place à l'arrivée du tracé,
+pas à son départ, sinon elle désigne le sens inverse de la rotation.
+
+**Favicon** : une oreille au trait, encre sur crème `#fff5bb`, dessinée à la main et vérifiée
+à 32 et 16 px.
+
+**Taille du repère** (`--fit` dans `NowPlaying.vue`) : elle se calcule sur la hauteur que le
+repère reçoit vraiment, pas sur celle de toute la carte — sinon le rail, les minutages, les
+commandes et l'écoute suivie ne sont pas déduits, le contenu déborde de sa case, se centre, et
+vient coller au rail (sur certaines hauteurs seulement, d'où un défaut intermittent).
+Deux pièges s'y cachent :
+- **un champ de saisie ne fait pas la hauteur de son interligne** : il suit les métriques de la
+  fonte, ici 1,42 fois le corps contre 0,95 demandé. D'où `input.mega { height: 1.12em }`, la
+  même que celle d'une case de rouleau — ce qui supprime aussi le décalage de mise en page
+  quand le rouleau laisse la place au champ à la fin d'un tirage ;
+- `container-type: size` sur le repère ne vaut **que** quand un verset joue. Tant que rien ne
+  joue, la carte suit son contenu : lui demander de mesurer sa hauteur revient à la lui retirer,
+  et le repère s'effondre à zéro.
+
+**État vide** : la carte ne s'étire pas (`.pane.idle`). L'étirer laissait les deux champs flotter
+au milieu d'un grand vide et donnait au filet qui les sépare une longueur sans rapport avec ce
+qu'il sépare. Le bouton « Escoltar » y est en plein, comme le tirage.
 
 **Légende du clavier** : en pied de page, la touche dessinée comme une touche (`<kbd>`) suivie de
 ce qu'elle fait. Elle disparaît sous `@media (pointer: coarse)` : sans clavier, elle n'a rien à

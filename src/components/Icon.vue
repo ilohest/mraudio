@@ -30,10 +30,10 @@ defineProps<{ name: 'play' | 'pause' | 'prev' | 'next' | 'restart' | 'link' | 'c
       stroke-linecap="round"
       stroke-linejoin="round"
     >
-      <!-- Cercle ouvert en haut, parcouru dans le sens inverse des aiguilles ; la pointe
-           est à l'arrivée du tracé, pas à son départ, sinon la flèche désigne l'envers. -->
-      <path d="M10.1 4.8A7.5 7.5 0 1 0 13.9 4.8" />
-      <path d="M16.1 7.1 13.9 4.8 17 3.8" />
+      <!-- Reprise : tracé de Lucide (rotate-ccw), sous licence ISC. Mes deux tentatives
+           de le dessiner à la main donnaient une flèche à l'envers puis illisible. -->
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
     </g>
     <g
       v-else-if="name === 'link'"
