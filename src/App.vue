@@ -7,6 +7,9 @@ import { lang, t } from './lib/i18n'
 import { getCatalog, type Track } from './lib/catalog'
 import { shortLabel } from './lib/labels'
 import { usePlayer, type Chain } from './composables/usePlayer'
+import mr128 from './assets/mr-128.png'
+import mr256 from './assets/mr-256.png'
+import mr512 from './assets/mr-512.png'
 
 const catalog = computed(() => getCatalog(lang.value))
 const player = usePlayer()
@@ -74,6 +77,44 @@ watch(
   { immediate: true },
 )
 
+/**
+ * Fiche du lecteur système : ce que le téléphone affiche sur l'écran verrouillé et dans le
+ * centre de contrôle. Elle compte d'autant plus ici que l'écoute suivie se fait souvent
+ * écran éteint — sans elle, on ne sait pas quel verset passe, et on ne peut pas l'arrêter
+ * sans rallumer. Les adresses sont rendues absolues : le système les charge hors de la page.
+ */
+const VIGNETTES = [
+  { src: mr128, sizes: '128x128' },
+  { src: mr256, sizes: '256x256' },
+  { src: mr512, sizes: '512x512' },
+].map(({ src, sizes }) => ({ src: new URL(src, document.baseURI).href, sizes, type: 'image/png' }))
+
+watch(
+  [() => player.track.value, t],
+  ([tr]) => {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.metadata = tr
+      ? new MediaMetadata({
+          title: shortLabel(tr, t.value),
+          artist: t.value.author,
+          album: t.value.work,
+          artwork: VIGNETTES,
+        })
+      : null
+  },
+  { immediate: true },
+)
+
+/* Les boutons de l'écran verrouillé pilotent le même lecteur que la page. */
+onMounted(() => {
+  if (!('mediaSession' in navigator)) return
+  const ms = navigator.mediaSession
+  ms.setActionHandler('play', () => player.toggle())
+  ms.setActionHandler('pause', () => player.toggle())
+  ms.setActionHandler('previoustrack', () => hasPrev.value && step(-1))
+  ms.setActionHandler('nexttrack', () => hasNext.value && step(1))
+})
+
 /* Lien direct : #ca/7/56 · #ca/0/0b · #ca/41/0 */
 onMounted(() => {
   const [, b, v] = location.hash.replace('#', '').split('/')
@@ -107,7 +148,24 @@ onMounted(() => addEventListener('keydown', onKey))
           <p class="imprint">{{ t.author }}</p>
           <LangSwitch />
         </div>
-        <h1 class="title">{{ t.work }}</h1>
+        <!-- Le titre et l'oreille se répondent, comme sur l'image de partage. -->
+        <div class="une">
+          <h1 class="title">{{ t.work }}</h1>
+          <svg
+            class="oreille"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+            focusable="false"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9.5 13.5a6.8 6.8 0 1 1 13.6 0c0 5.6-5.6 6-5.6 9.9a3.5 3.5 0 1 1-7 0" />
+            <path d="M19.6 13.5a3 3 0 0 0-6 0v1.4a2.4 2.4 0 1 1 0 4.8" />
+          </svg>
+        </div>
       </header>
 
       <DrawBar v-if="catalog" @draw="draw" />
@@ -191,6 +249,22 @@ onMounted(() => addEventListener('keydown', onKey))
   margin: 0;
   font: 400 0.92rem/1 var(--sans);
   color: var(--ink);
+}
+
+/* Le titre et l'oreille sur une même ligne de fond : l'oreille ne doit pas ajouter de
+   hauteur à la une, qui est déjà le bloc le plus coûteux sur un téléphone. */
+.une {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(16px, 4vw, 48px);
+}
+.oreille {
+  flex: none;
+  width: clamp(42px, 9vw, 148px);
+  height: clamp(42px, 9vw, 148px);
+  color: var(--ink);
+  animation: settle 0.7s cubic-bezier(0.22, 1, 0.3, 1) 0.1s both;
 }
 
 /* Le titre en Ortica Light : la seule chose qui occupe vraiment la page. */

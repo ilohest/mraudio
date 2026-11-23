@@ -325,8 +325,23 @@ Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même d
 R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
 les sortir ailleurs.
 
+**Fiche du lecteur système** (`App.vue`) : `navigator.mediaSession` reçoit le titre du verset,
+l'auteur, l'œuvre et une vignette carrée « MR » en trois tailles, plus les commandes
+lecture / pause / verset précédent / suivant. C'est ce que le téléphone affiche sur l'écran
+verrouillé : avec l'écoute suivie, on écoute souvent écran éteint, et sans cette fiche on ne
+sait ni quel verset passe ni comment l'arrêter sans rallumer. Les vignettes sont importées par
+Vite (donc hachées) et leur adresse est rendue absolue — le système les charge hors de la page.
+
+**L'oreille** apparaît à trois endroits, toujours le même tracé : le favicon (`index.html`),
+l'image de partage (`src/og.template.html`) et la une (`App.vue`), où elle répond au titre sur
+la même ligne de fond. Posée en `flex-end` à côté du titre, elle n'ajoute **aucune hauteur** à
+la une — ce qui compte, c'est le bloc le plus coûteux sur un téléphone.
+
+**Images** : `node scripts/images.mjs` refait l'aperçu de partage et les vignettes du lecteur.
+Elles sont versionnées pour qu'un déploiement n'ait jamais besoin de Chrome.
+
 **Aperçu de partage** : `src/og.template.html` → `src/assets/og.png` (1200 × 630), fabriquée par
-`node scripts/og.mjs` via Chrome sans interface — seul moyen sûr d'avoir les vraies fontes et des
+`node scripts/images.mjs` via Chrome sans interface — seul moyen sûr d'avoir les vraies fontes et des
 dimensions exactes. **L'image est versionnée** pour qu'un déploiement n'ait jamais besoin de
 Chrome. Elle ne porte que l'auteur, le titre français et l'oreille — Isaure a écarté les trois titres
 empilés d'une première version. Les balises suivent l'image : `og:title` et `og:locale` sont en
