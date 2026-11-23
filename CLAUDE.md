@@ -59,7 +59,9 @@ Retirés à la demande d'Isaure, ne pas remettre sans elle :
 - l'accroche « Escolta allò que l'atzar… » ;
 - le compte d'audios (« 2 809 àudios ») ;
 - la ligne « També : Preliminars / Lletanies ». **Conséquence** : le livre 0 et les litanies ne
-  sont plus atteignables depuis l'interface, seulement par lien direct (`#ca/0/0b`, `#ca/41/0`).
+  sont plus atteignables depuis l'interface, seulement par lien direct (`#ca/0/0b`, `#ca/41/0`) ;
+- le bouton « Obrir-ne un altre » de la barre de commandes : il appelait le même `draw()` que le
+  grand bouton de tirage, qui est juste au-dessus.
 
 ## Structure
 - `src/lib/catalog.ts` — charge `src/data/manifest.<lang>.json` (embarqués au build), URL audio, voisins, tirage.

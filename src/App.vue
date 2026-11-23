@@ -104,7 +104,6 @@ onMounted(() => addEventListener('keydown', onKey))
           :has-next="hasNext"
           @prev="step(-1)"
           @next="step(1)"
-          @again="draw"
         />
       </section>
 

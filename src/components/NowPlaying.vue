@@ -7,7 +7,7 @@ import type { Track } from '../lib/catalog'
 import { formatTime, usePlayer } from '../composables/usePlayer'
 
 const props = defineProps<{ track: Track; drawn: boolean; hasPrev: boolean; hasNext: boolean }>()
-const emit = defineEmits<{ prev: []; next: []; again: [] }>()
+const emit = defineEmits<{ prev: []; next: [] }>()
 
 const { playing, loading, error, current, duration, toggle, restart, seek } = usePlayer()
 
@@ -148,7 +148,6 @@ async function share() {
       <button type="button" :disabled="!hasPrev" @click="emit('prev')">{{ t.prev }}</button>
       <button type="button" @click="restart">{{ t.replay }}</button>
       <button type="button" :disabled="!hasNext" @click="emit('next')">{{ t.next }}</button>
-      <button type="button" @click="emit('again')">{{ t.again }}</button>
       <button type="button" :class="{ done: copied }" @click="share">{{ copied ? t.copied : t.share }}</button>
     </nav>
   </article>
