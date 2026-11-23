@@ -37,15 +37,18 @@ const standing = computed(() => {
 const plain = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
 
 /**
- * Le verset 0 d'un livre, ce sont ses épigraphes : la case l'écrit en toutes lettres plutôt
- * qu'en chiffre, parce que c'est bien un verset et que « 0 » ne dit rien à personne.
- * La saisie accepte les deux, et le mot sans ses accents.
+ * Les deux bouts d'un livre portent un nom plutôt qu'un numéro : le verset 0 en est
+ * l'épigraphe, le dernier son hypographe. La case les écrit en toutes lettres, et la saisie
+ * accepte indifféremment le mot ou le chiffre, accents et casse mis de côté.
  */
 function readVerse(raw: string): number | null {
   const s = raw.trim()
   if (s === '') return 0
   if (/^\d+$/.test(s)) return parseInt(s, 10)
-  return plain(s) === plain(t.value.epigraphs) ? 0 : null
+  const mot = plain(s)
+  if (mot === plain(t.value.epigraphs)) return 0
+  if (mot === plain(t.value.hypographs)) return range.value ? range.value[1] : null
+  return null
 }
 const bookInput = ref('')
 const verseInput = ref('')
@@ -64,7 +67,15 @@ function syncFromTrack() {
     return
   }
   bookInput.value = toRoman(tr.book)
-  verseInput.value = tr.verse > 0 ? String(tr.verse) : t.value.epigraphs
+  // Le catalogue est interrogé directement : les valeurs calculées ne sont pas encore à jour.
+  const bornes = props.catalog.range(tr.book)
+  const dernier = bornes ? bornes[1] : null
+  verseInput.value =
+    tr.verse === 0
+      ? t.value.epigraphs
+      : tr.verse === dernier
+        ? t.value.hypographs
+        : String(tr.verse)
 }
 
 /* Tirage : deux rouleaux qui glissent et se posent l'un après l'autre. Le défilé est
@@ -153,12 +164,6 @@ const bookHint = computed(() => {
  * d'indication, en gris et en petit, personne ne le voyait. Il réagit à la saisie, pas
  * seulement à ce qui joue : taper le dernier numéro suffit à l'annoncer.
  */
-const isHypograph = computed(() => {
-  if (rolling.value || !range.value) return false
-  const v = readVerse(verseInput.value)
-  return v !== null && v > 0 && v === range.value[1]
-})
-const verseLabel = computed(() => (isHypograph.value ? t.value.hypographs : t.value.verse))
 const verseHint = computed(() => (rolling.value || !range.value ? '' : `${range.value[0]} – ${range.value[1]}`))
 
 /* Le bouton n'apparaît que si la saisie ne décrit plus ce qui joue : il enseigne
@@ -340,7 +345,7 @@ const chainOpts = computed(() => [
       </label>
 
       <label class="slot verse">
-        <span class="micro" :class="{ named: isHypograph }">{{ verseLabel }}</span>
+        <span class="micro">{{ t.verse }}</span>
         <span class="field">
           <Reel
             v-if="rolling"
@@ -599,7 +604,7 @@ const chainOpts = computed(() => [
 input.mega { height: calc(var(--num) * 1.12); }
 .mega:focus { outline: none; }
 .mega::placeholder { color: var(--line); }
-/* « Epígrafes » à la place d'un numéro : même boîte, autre échelle. */
+/* « Epígrafes » ou « Hipògrafs » à la place d'un numéro : même boîte, autre échelle. */
 .mega.word {
   font-size: clamp(1.1rem, calc(var(--num) * 0.34), 2.6rem);
   letter-spacing: -0.005em;
@@ -607,8 +612,6 @@ input.mega { height: calc(var(--num) * 1.12); }
 
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }
-/* Quand l'intitulé nomme l'hypographe, il n'est plus une étiquette parmi d'autres. */
-.micro.named { color: var(--ink); }
 .hint { font-size: 0.8rem; }
 .hint.bad { color: var(--rubric-deep); }
 

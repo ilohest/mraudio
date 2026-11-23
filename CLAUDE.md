@@ -309,6 +309,11 @@ Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même d
 R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
 les sortir ailleurs.
 
+**En ligne depuis le 23/11/2026 : <https://mraudio.app>**, sur le compte personnel d'Isaure.
+Le premier envoi a pris 9 min 30 pour 5 619 fichiers ; les suivants ne transmettent que ce qui
+a changé (quelques secondes). Brancher le domaine **désactive l'adresse `workers.dev`** : il n'y
+a plus qu'une seule adresse, c'est voulu, mais ça surprend si on la cherche encore.
+
 Le compte à utiliser est le compte **personnel** d'Isaure. Si `npx wrangler whoami` en affiche un
 autre — elle est membre de comptes de clientes — il faut refaire `npx wrangler login` et n'autoriser
 que le sien : rien ne doit partir sur le compte d'un tiers.
