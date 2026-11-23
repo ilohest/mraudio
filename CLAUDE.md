@@ -275,14 +275,38 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   survit au rechargement. Build : **216 Ko, 5 fichiers**.
 - **Pas encore vérifié sur Safari**, aucun des trois designs.
 - Pour le test local, `public/audio/ca` et `public/audio/es` sont des **liens symboliques** vers
-  `…/_web/ca` et `…/_web/es` (évite de dupliquer 1,5 Go).
-  `public/audio` est dans `.gitignore`. Attention : `npm run build` copierait ces 803 Mo dans `dist/` —
-  enlever le lien avant un build, ou garder les audios hors de `public/` et passer par `VITE_AUDIO_BASE`.
+  `…/_web/ca` et `…/_web/es` (évite de dupliquer 1,5 Go). `public/audio` est dans `.gitignore`.
+  `vite.config.ts` met `publicDir: false` au build : les audios ne peuvent plus se retrouver
+  dans `dist/` par accident, ce qui est arrivé une fois et coûtait 800 Mo de copie.
 - **Disque du Mac serré** : 3,6 Gio libres sur 228 après la conversion espagnole. Les deux sources
   d'origine (1,2 Go en catalan, 1,9 Go en espagnol) ne sont plus nécessaires une fois les dossiers
   `_web` en ligne — c'est là qu'il faudra récupérer de la place avant le français.
 - Sur le serveur Hostinger, `wp-content/uploads/audios/` (FR/CAT/ES, ~3 Go de MP3 de livres entiers) a été créé
   lors d'une tâche précédente : sans rapport avec cette app, peut être supprimé.
+
+## Mise en ligne
+
+Cible : **Cloudflare Workers en site statique** (pas de code, seulement des fichiers), domaine
+**mraudio.app**, déjà sur les serveurs de noms Cloudflare. Tout tient dans le forfait gratuit :
+5 621 fichiers pour une limite de 20 000 par version, le plus gros à 6,7 Mo pour une limite de
+25 Mo. Aucune limite de poids total n'est documentée.
+
+```
+npm run deploy:build     # assemble deploy/ : l'app construite + les audios
+npx wrangler deploy      # envoie deploy/ (ou : npm run deploy, qui enchaîne les deux)
+```
+
+`scripts/deploy.mjs` ajoute les audios en **liens durs** (`cp -al`) : 1,5 Go apparents pour zéro
+octet consommé, ce qui compte — il reste 2,4 Gio sur le disque. Le dossier des audios est déduit
+du lien symbolique `public/audio/ca`, pour que le chemin ne soit écrit qu'à un seul endroit.
+
+Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même domaine : pas de
+R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
+les sortir ailleurs.
+
+**Point bloquant au 23/11/2026** : `wrangler whoami` est bien connecté à isaure.lohest@gmail.com
+mais le seul compte atteint est « Hello@audegastauer.com's Account », celui d'une cliente. Isaure
+veut son compte personnel. Rien n'a été déployé.
 
 ## Ce qui n'a pas été vérifié
 

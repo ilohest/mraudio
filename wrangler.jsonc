@@ -1,0 +1,10 @@
+{
+  // Site statique servi par Cloudflare Workers : pas de code, seulement des fichiers.
+  // Le dossier « deploy » est assemblé par scripts/deploy.mjs (application + audios).
+  // Le domaine mraudio.app se branche après le premier déploiement réussi : voir CLAUDE.md.
+  "name": "mraudio",
+  "compatibility_date": "2025-11-01",
+  "assets": {
+    "directory": "./deploy"
+  }
+}

@@ -27,3 +27,5 @@ dist-ssr
 audio-web
 public/audio
 dist-single
+
+deploy/
