@@ -53,24 +53,37 @@ const bigSize = computed(() => {
 const verse = computed(() => (rolling.value ? rollVerse.value : label.value.verse))
 const progress = computed(() => (duration.value ? current.value / duration.value : 0))
 
+/* Le rail porte la mesure : c'est lui qu'on interroge, pas la zone de clic qui l'entoure. */
 const bar = ref<HTMLElement | null>(null)
+const rail = ref<HTMLElement | null>(null)
+const scrubbing = ref(false)
 let dragging = false
 function seekFrom(e: PointerEvent) {
-  const r = bar.value!.getBoundingClientRect()
+  const r = (rail.value ?? bar.value)!.getBoundingClientRect()
   seek((e.clientX - r.left) / r.width)
 }
 function down(e: PointerEvent) {
   dragging = true
+  scrubbing.value = true
   ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   seekFrom(e)
 }
 function move(e: PointerEvent) { if (dragging) seekFrom(e) }
-function up() { dragging = false }
+function up() { dragging = false; scrubbing.value = false }
 function barKey(e: KeyboardEvent) {
   if (!duration.value) return
   const step = 5 / duration.value
   if (e.key === 'ArrowRight') { e.preventDefault(); seek(progress.value + step) }
   if (e.key === 'ArrowLeft') { e.preventDefault(); seek(progress.value - step) }
+}
+
+/* Petite détente sur le bouton de lecture à chaque bascule. */
+const pulse = ref(false)
+function onToggle() {
+  pulse.value = false
+  requestAnimationFrame(() => (pulse.value = true))
+  setTimeout(() => (pulse.value = false), 420)
+  toggle()
 }
 
 const copied = ref(false)
@@ -97,11 +110,11 @@ async function share() {
       </div>
     </div>
 
-    <!-- Progression : un filet qui traverse toute la page et s'épaissit quand on le vise. -->
+    <!-- Progression : un rail qui s'épaissit et sort sa tête dès qu'on l'approche. -->
     <div
       ref="bar"
       class="scrub"
-      :class="{ busy: loading && !error }"
+      :class="{ busy: loading && !error, live: scrubbing }"
       role="slider"
       tabindex="0"
       :aria-label="t.verse"
@@ -115,7 +128,11 @@ async function share() {
       @pointercancel="up"
       @keydown="barKey"
     >
-      <span class="elapsed" :style="{ width: `${progress * 100}%` }"></span>
+      <span ref="rail" class="rail">
+        <span class="elapsed" :style="{ width: `${progress * 100}%` }">
+          <i class="knob"></i>
+        </span>
+      </span>
     </div>
 
     <p class="times">
@@ -124,16 +141,15 @@ async function share() {
       <span>{{ formatTime(duration) }}</span>
     </p>
 
-    <!-- Grille de commandes : les filets sont les gouttières, pas des bordures. -->
     <nav class="controls">
-      <button type="button" class="primary" :disabled="error" @click="toggle">
+      <button type="button" class="primary" :class="{ pulse }" :disabled="error" @click="onToggle">
         {{ playing ? t.pause : t.play }}
       </button>
       <button type="button" :disabled="!hasPrev" @click="emit('prev')">{{ t.prev }}</button>
       <button type="button" @click="restart">{{ t.replay }}</button>
       <button type="button" :disabled="!hasNext" @click="emit('next')">{{ t.next }}</button>
       <button type="button" @click="emit('again')">{{ t.again }}</button>
-      <button type="button" @click="share">{{ copied ? t.copied : t.share }}</button>
+      <button type="button" :class="{ done: copied }" @click="share">{{ copied ? t.copied : t.share }}</button>
     </nav>
   </article>
 </template>
@@ -144,122 +160,167 @@ async function share() {
 .hero {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  animation: cut 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .hero.solo { grid-template-columns: 1fr; }
-@keyframes cut {
-  from { opacity: 0; clip-path: inset(0 100% 0 0); }
-  to { opacity: 1; clip-path: inset(0 0 0 0); }
-}
 
 .slot {
-  padding: clamp(20px, 3.5vw, 34px) var(--gutter) clamp(14px, 2.5vw, 26px);
+  padding: var(--pad);
   min-width: 0;
+  animation: lift 0.62s cubic-bezier(0.22, 1.15, 0.3, 1) both;
 }
-.slot.verse { border-left: 1px solid var(--rule); }
+/* La seconde case entre juste après la première : le repère se compose en deux temps. */
+.slot.verse {
+  border-left: 1px solid var(--line);
+  animation-delay: 0.07s;
+}
+@keyframes lift {
+  from { opacity: 0; transform: translateY(18px) scale(0.965); }
+  to { opacity: 1; transform: none; }
+}
 
+/* Le repère en Ortica Light. Les tailles sont en cqi : elles suivent la carte, pas l'écran. */
 .mega {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   font-family: var(--display);
-  font-weight: 700;
-  font-stretch: 112%;
-  font-size: clamp(3.6rem, 17vw, 11rem);
-  line-height: 0.8;
-  letter-spacing: -0.045em;
-  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 300;
+  font-size: clamp(3.2rem, 18cqi, 9.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.012em;
+  font-variant-numeric: lining-nums;
   white-space: nowrap;
 }
 /* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
-.mega.len-l { font-size: clamp(2.8rem, 12vw, 7.5rem); }
-.mega.len-xl { font-size: clamp(2.2rem, 9.5vw, 6rem); }
+.mega.len-l { font-size: clamp(2.6rem, 13.5cqi, 7rem); }
+.mega.len-xl { font-size: clamp(2rem, 10.5cqi, 5.4rem); }
 
-/* Un nom (« Pare Daurat ») ou un mot (« Epígrafs ») : même famille, autre échelle. */
+/* Un nom (« Pare Daurat ») ou un mot (« Epígrafs ») : même police, autre échelle. */
 .mega.word {
   white-space: normal;
-  font-size: clamp(1.8rem, 6vw, 4rem);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
-  font-stretch: 100%;
+  font-size: clamp(1.7rem, 7cqi, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
 }
-.mega.accent { color: var(--accent); }
+.mega.accent { color: var(--rubric-deep); }
 .mega.rolling { color: var(--dim); }
 
 .scrub {
   position: relative;
-  height: 26px;
-  border-top: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--pad);
   cursor: ew-resize;
   touch-action: none;
-  display: flex;
-  align-items: flex-start;
 }
-.scrub .elapsed {
-  display: block;
-  height: 3px;
-  margin-top: -2px;
-  background: var(--accent);
-  transition: height 0.12s linear, margin-top 0.12s linear;
+.rail {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: height 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.scrub:hover .elapsed, .scrub:focus-visible .elapsed { height: 9px; margin-top: -5px; }
-.scrub:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.scrub.busy::after {
+.elapsed {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--rubric);
+}
+/* La tête ne sort qu'au survol, et elle sort en ressort. */
+.knob {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px -7px 0 0;
+  border-radius: 999px;
+  background: var(--rubric);
+  transform: scale(0);
+  transition: transform 0.3s cubic-bezier(0.34, 1.7, 0.64, 1);
+}
+.scrub:hover .rail, .scrub:focus-visible .rail, .scrub.live .rail { height: 9px; }
+.scrub:hover .knob, .scrub:focus-visible .knob { transform: scale(1); }
+.scrub.live .knob { transform: scale(1.35); }
+.scrub:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: -4px; border-radius: var(--r-sm); }
+.scrub.busy .rail::after {
   content: '';
   position: absolute;
-  inset: -1px auto auto 0;
-  height: 3px;
-  width: 18%;
-  background: var(--ink);
-  animation: slide 1.1s ease-in-out infinite;
+  inset: 0 auto 0 0;
+  width: 22%;
+  border-radius: 999px;
+  background: var(--dim);
+  animation: slide 1.2s ease-in-out infinite;
 }
-@keyframes slide { to { transform: translateX(455%); } }
+@keyframes slide { to { transform: translateX(355%); } }
 
 .times {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   margin: 0;
-  padding: 9px var(--gutter) 16px;
-  font: 500 0.68rem/1.2 var(--mono);
-  letter-spacing: 0.1em;
+  padding: 2px var(--pad) 0;
+  font: 400 0.86rem/1.3 var(--sans);
   color: var(--dim);
   font-variant-numeric: tabular-nums;
 }
-.err { color: var(--accent); text-transform: uppercase; letter-spacing: 0.14em; }
+.err { color: var(--rubric-deep); }
 
-/* Flex plutôt que grille : la dernière rangée s'étire au lieu de laisser une case vide. */
+/* Boutons blancs posés sur la carte grise. Flex : la dernière rangée s'étire au lieu
+   de laisser une case vide. */
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 1px;
-  background: var(--hair);
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  gap: 8px;
+  padding: var(--pad);
 }
 .controls button {
   appearance: none;
-  flex: 1 1 118px;
+  flex: 1 1 132px;
   min-width: 0;
-  border: 0;
-  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg);
   color: var(--ink);
-  font: 600 0.66rem/1.35 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 400 0.96rem/1.3 var(--sans);
   padding: 16px 10px;
   cursor: pointer;
-  transition: background 0.12s linear, color 0.12s linear;
+  transition:
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
-.controls button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
-.controls button:active:not(:disabled) { background: var(--accent); color: #fff; }
-.controls button:disabled { color: var(--dim); cursor: default; }
-.controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.controls .primary { flex: 2 1 236px; background: var(--ink); color: var(--paper); }
-.controls .primary:hover:not(:disabled) { background: var(--accent); color: #fff; }
-.controls .primary:disabled { background: var(--hair); }
+.controls button:hover:not(:disabled) {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  transform: translateY(-2px);
+}
+.controls button:active:not(:disabled) { transform: scale(0.96); }
+.controls button:disabled { color: var(--dim); background: transparent; cursor: default; }
+.controls button:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
+.controls button.done { background: var(--rubric); border-color: var(--rubric); color: var(--bg); }
 
-@media (max-width: 620px) {
+/* La lecture est la seule commande imprimée en plein. */
+.controls .primary {
+  flex: 2 1 230px;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+.controls .primary:hover:not(:disabled) { background: var(--rubric); border-color: var(--rubric); }
+.controls .primary:disabled { background: transparent; border-color: var(--line); }
+.controls .primary.pulse { animation: pop 0.42s cubic-bezier(0.34, 1.6, 0.64, 1); }
+@keyframes pop {
+  0% { transform: scale(1); }
+  38% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
+@container (max-width: 620px) {
   .hero { grid-template-columns: 1fr; }
-  .slot.verse { border-left: 0; border-top: 1px solid var(--hair); }
+  .slot.verse { border-left: 0; border-top: 1px solid var(--line); }
   .controls .primary { flex-basis: 100%; }
 }
 </style>

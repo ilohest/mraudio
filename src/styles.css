@@ -1,74 +1,95 @@
 /*
- * Brutalisme éditorial : papier blanc cassé, encre presque noire, un seul accent.
- * Règles d'un pixel, angles vifs, aucun arrondi nulle part. La typographie fait le travail.
+ * D'après la page de spécimen d'Ortica chez Collletttivo : fond blanc, contenu posé dans
+ * des cartes à fond clair, rayon de 12 px, gouttière de 16 px, et des lignes de notice
+ * séparées par des filets — l'effet « journal ». Une seule carte crème : le titre.
+ * Pas de mode sombre : la page reste claire quel que soit le réglage du système.
+ *
+ * Deux fontes, toutes deux de Collletttivo et sous SIL Open Font License 1.1 :
+ * Ortica Linear Light (titres et grands repères) et Ronzino Regular (texte, signalétique,
+ * boutons). Notices complètes dans src/assets/fonts/OFL-Ortica.txt et OFL-Ronzino.txt.
  */
+@font-face {
+  font-family: 'Ortica Linear';
+  src: url('./assets/fonts/OrticaLinear-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ronzino';
+  src: url('./assets/fonts/Ronzino-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --paper: #efeee9;
-  --ink: #121211;
-  --accent: #ff3b00;
-  --dim: #8c8c85;
-  --rule: #121211;
-  --hair: rgb(18 18 17 / 0.22);
-  --display: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
-  --mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
-  --gutter: clamp(16px, 4vw, 40px);
+  --bg: #ffffff;
+  --card: #f2f1f0;
+  --card-2: #f8f7f6;
+  --cream: #fff5bb;
+  --ink: #222222;
+  --dim: #6e6e6b;
+  --line: rgb(34 34 34 / 0.16);
+  --rubric: #e27960;
+  /* Même accent, assombri : la pêche n'a pas assez de contraste en petit corps. */
+  --rubric-deep: #c25434;
+  --display: 'Ortica Linear', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Ronzino', 'Helvetica Neue', Arial, sans-serif;
+  --r: 12px;
+  --r-sm: 8px;
+  --gap: 16px;
+  --pad: clamp(18px, 2.6vw, 30px);
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #0d0d0c;
-    --ink: #efeee9;
-    --dim: #76766f;
-    --rule: #efeee9;
-    --hair: rgb(239 238 233 / 0.24);
-    color-scheme: dark;
-  }
-}
+*, *::before, *::after { box-sizing: border-box; }
 
-*, *::before, *::after { box-sizing: border-box; border-radius: 0; }
-
-html { background: var(--paper); }
+html { background: var(--bg); }
 
 body {
   margin: 0;
   min-height: 100svh;
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Micro-libellé monospace : la signalétique de toute l'interface. */
+/* Le bloc posé sur le fond blanc : tout le contenu vit dans l'un d'eux. */
+.card {
+  background: var(--card);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.card.cream { background: var(--cream); }
+
+/* Petite légende de notice : bas de casse, discrète, jamais en capitales espacées. */
 .micro {
   margin: 0;
-  font: 500 0.66rem/1 var(--mono);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font: 400 0.86rem/1.35 var(--sans);
   color: var(--dim);
 }
 
-/* Bouton brutaliste : bordure d'un pixel, inversion au survol, zéro transition molle. */
+/* Bouton de commande : blanc sur la carte grise, comme les réglages du spécimen. */
 .btn {
   appearance: none;
-  border: 1px solid var(--rule);
-  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg);
   color: var(--ink);
-  font: 600 0.7rem/1 var(--mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  padding: 15px 18px;
+  font: 400 0.88rem/1 var(--sans);
+  padding: 10px 14px;
   cursor: pointer;
-  transition: background 0.12s linear, color 0.12s linear;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.btn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
-.btn:active:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn:disabled { color: var(--dim); border-color: var(--hair); cursor: default; }
-.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn:disabled { color: var(--dim); background: transparent; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
 
-::selection { background: var(--accent); color: #fff; }
+::selection { background: color-mix(in srgb, var(--rubric) 24%, transparent); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

@@ -5,11 +5,12 @@ import { t } from '../lib/i18n'
 const emit = defineEmits<{ draw: [] }>()
 defineProps<{ disabled?: boolean }>()
 
-/* Court éclair d'accent au clic : le seul « effet » que s'autorise le brutalisme. */
+/* Flash de rubrique au clic : la confirmation que le geste est parti. */
 const firing = ref(false)
 function onClick() {
-  firing.value = true
-  setTimeout(() => (firing.value = false), 160)
+  firing.value = false
+  requestAnimationFrame(() => (firing.value = true))
+  setTimeout(() => (firing.value = false), 420)
   emit('draw')
 }
 </script>
@@ -17,36 +18,62 @@ function onClick() {
 <template>
   <button class="draw" :class="{ firing }" type="button" :aria-label="t.drawAria" :disabled="disabled" @click="onClick">
     <span class="label">{{ t.drawAria }}</span>
-    <span class="arrow" aria-hidden="true">⟶</span>
+    <span class="arrow" aria-hidden="true">→</span>
   </button>
 </template>
 
 <style scoped>
+/* L'action principale du site : pleine largeur, imprimée en plein, grande cible.
+   Le public est âgé — rien ici ne dépend du survol ni d'une petite zone de clic. */
 .draw {
   appearance: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
   border: 0;
-  background: transparent;
-  color: var(--ink);
+  border-radius: var(--r);
+  background: var(--ink);
+  color: var(--bg);
   cursor: pointer;
-  padding: clamp(22px, 4vw, 34px) var(--gutter);
+  padding: clamp(26px, 3.6vw, 44px) var(--pad);
   text-align: left;
-  transition: background 0.12s linear, color 0.12s linear;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1),
+    background 0.22s ease;
 }
 .label {
-  font: 600 clamp(0.82rem, 2.2vw, 1.05rem)/1.1 var(--mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(1.45rem, 3.6vw, 2.3rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
 }
-.arrow { font-size: 1.5rem; line-height: 1; transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.arrow {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(1.6rem, 3.8vw, 2.4rem);
+  line-height: 1;
+  transition: transform 0.34s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
 
-.draw:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
-.draw:hover:not(:disabled) .arrow { transform: translateX(12px); }
-.draw.firing { background: var(--accent); color: #fff; }
-.draw:disabled { color: var(--dim); cursor: default; }
-.draw:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.draw:hover:not(:disabled) { background: var(--rubric); transform: translateY(-3px); }
+.draw:hover:not(:disabled) .arrow { transform: translateX(16px); }
+.draw:active:not(:disabled) { transform: scale(0.985); }
+.draw.firing { animation: fire 0.42s cubic-bezier(0.34, 1.6, 0.64, 1); }
+.draw.firing .arrow { animation: fly 0.42s cubic-bezier(0.34, 1.6, 0.64, 1); }
+@keyframes fire {
+  0% { background: var(--rubric); transform: scale(0.985); }
+  40% { background: var(--rubric); transform: scale(1.012); }
+  100% { background: var(--ink); transform: none; }
+}
+@keyframes fly {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(26px); opacity: 0.2; }
+  46% { transform: translateX(-20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+.draw:disabled { background: var(--card); color: var(--dim); cursor: default; }
+.draw:focus-visible { outline: 3px solid var(--rubric-deep); outline-offset: 3px; }
 </style>

@@ -84,18 +84,18 @@ onMounted(() => addEventListener('keydown', onKey))
 
 <template>
   <div class="page">
-    <header class="masthead">
+    <header class="card cream masthead">
       <div class="idbar">
-        <p class="micro">{{ t.author }}</p>
+        <p class="imprint">{{ t.author }}</p>
         <LangSwitch />
       </div>
       <h1 class="title">{{ t.work }}</h1>
     </header>
 
-    <template v-if="catalog">
-      <section class="band"><DrawBar @draw="draw" /></section>
+    <DrawBar v-if="catalog" @draw="draw" />
 
-      <section v-if="player.track.value" ref="stage" class="band">
+    <main class="grid" :class="{ solo: !(catalog && player.track.value) }">
+      <section v-if="catalog && player.track.value" ref="stage" class="card pane stage">
         <NowPlaying
           :key="`${lang}-${player.track.value.id}`"
           :track="player.track.value"
@@ -108,13 +108,15 @@ onMounted(() => addEventListener('keydown', onKey))
         />
       </section>
 
-      <section class="band"><VersePicker :catalog="catalog" @pick="(tr) => open(tr)" /></section>
-    </template>
-
-    <section v-else class="band"><p class="soon">{{ t.soon }}</p></section>
+      <div class="column">
+        <section v-if="catalog" class="card pane">
+          <VersePicker :catalog="catalog" @pick="(tr) => open(tr)" />
+        </section>
+        <section v-else class="card pane"><p class="soon">{{ t.soon }}</p></section>
+      </div>
+    </main>
 
     <footer class="foot">
-      <span>{{ catalog ? t.tracks(catalog.tracks.length) : '—' }}</span>
       <span class="keys">{{ t.shortcuts }}</span>
     </footer>
   </div>
@@ -123,60 +125,79 @@ onMounted(() => addEventListener('keydown', onKey))
 <style scoped>
 .page {
   min-height: 100svh;
+  padding: var(--gap);
   display: flex;
   flex-direction: column;
+  gap: var(--gap);
 }
 
+/* La carte crème : la une. Tout le reste est gris. */
+.masthead { padding: var(--pad); }
 .idbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px var(--gutter);
-  border-bottom: 1px solid var(--rule);
+}
+.imprint {
+  margin: 0;
+  font: 400 0.92rem/1 var(--sans);
+  color: var(--ink);
 }
 
-.masthead { padding-bottom: clamp(26px, 5vw, 56px); }
-
-/* Le titre tient la page : capitales, graisse pleine, chasse resserrée. */
+/* Le titre en Ortica Light : la seule chose qui occupe vraiment la page. */
 .title {
-  margin: clamp(26px, 6vw, 60px) 0 0;
-  padding: 0 var(--gutter);
+  margin: clamp(44px, 9vw, 120px) 0 0;
+  max-width: 20ch;
   font-family: var(--display);
-  font-weight: 700;
-  font-stretch: 112%;
-  font-size: clamp(2.6rem, 11.5vw, 8.5rem);
-  line-height: 0.85;
-  letter-spacing: -0.045em;
-  text-transform: uppercase;
+  font-weight: 300;
+  font-size: clamp(2.7rem, 10vw, 7rem);
+  line-height: 1;
+  letter-spacing: -0.022em;
+  animation: settle 0.7s cubic-bezier(0.22, 1, 0.3, 1) both;
 }
-.band { border-top: 1px solid var(--rule); }
+@keyframes settle {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Deux colonnes dès qu'il y a la place : le repère à gauche, les commandes à droite. */
+.grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+.column {
+  display: grid;
+  gap: var(--gap);
+  align-content: start;
+}
+/* Les cartes mesurent leur propre largeur : les tailles internes sont en cqi,
+   donc la colonne étroite ne reçoit pas des chiffres calibrés pour la page entière. */
+.pane { container-type: inline-size; }
+
+@media (min-width: 1000px) {
+  .grid { grid-template-columns: minmax(0, 1fr) 400px; }
+  .grid.solo { grid-template-columns: 1fr; }
+}
 
 .soon {
   margin: 0;
-  padding: clamp(40px, 9vw, 90px) var(--gutter);
-  max-width: 34ch;
-  font: 500 0.8rem/1.7 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  padding: var(--pad);
+  max-width: 38ch;
+  font: 400 1.05rem/1.55 var(--sans);
   color: var(--dim);
 }
 
 .foot {
   margin-top: auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px var(--gutter);
-  border-top: 1px solid var(--rule);
-  font: 500 0.62rem/1.4 var(--mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  justify-content: flex-end;
+  padding: 4px 6px 2px;
+  font: 400 0.82rem/1.4 var(--sans);
   color: var(--dim);
 }
-.keys { text-transform: none; letter-spacing: 0.1em; }
 
 @media (max-width: 620px) {
   .keys { display: none; }

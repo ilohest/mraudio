@@ -1,8 +1,6 @@
 import { createApp } from 'vue'
-// Polices auto-hébergées (pas d'appel à Google Fonts → RGPD).
-// Archivo : axes graisse ET largeur, pour la typographie démesurée.
-import '@fontsource-variable/archivo/wdth.css'
-import '@fontsource-variable/jetbrains-mono/wght.css'
+// Les deux fontes (Ortica Linear Light, Ronzino Regular) sont auto-hébergées et
+// déclarées en @font-face dans styles.css — aucun appel à un service extérieur.
 import './styles.css'
 import App from './App.vue'
 

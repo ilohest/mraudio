@@ -11,8 +11,6 @@
     "audio": "node scripts/audio.mjs"
   },
   "dependencies": {
-    "@fontsource-variable/archivo": "^5.3.0",
-    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "vue": "^3.5.44"
   },
   "devDependencies": {

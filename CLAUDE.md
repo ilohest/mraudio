@@ -11,28 +11,55 @@ Reprise d'un prototype « La Quête / Oracle d'àudio V7 » (HTML + script Power
 Vue 3 + Vite + TypeScript, sans routeur ni lib i18n (petit dictionnaire maison). Polices auto-hébergées via @fontsource.
 Build statique (`base: './'`) → se dépose dans n'importe quel sous-dossier.
 `npm run build:single` → un seul HTML (vite-plugin-singlefile), pratique pour aperçu / iframe.
+## Design — « spécimen » (23/11/2026)
 
-## Design — « brutalisme éditorial » (23/11/2026)
-Le premier design (ivoire, Cormorant Garamond, coupe-papier en photo) a été **remplacé à la demande d'Isaure**.
-Il reste accessible dans git, commit `bc9b8dd`.
+Deux designs ont précédé celui-ci, tous deux récupérables dans git :
+l'ivoire d'origine (`bc9b8dd`) et un brutalisme éditorial (`1287a0c`), écartés par Isaure.
+La référence actuelle est la page de spécimen d'Ortica chez Collletttivo :
+<https://www.collletttivo.it/typefaces/ortica>.
 
 Principes, à respecter pour toute évolution :
-- **Aucun arrondi, nulle part** (`border-radius: 0` est posé sur `*` dans `styles.css`). Pas d'ombre portée.
-- Filets d'un pixel comme seul séparateur ; les sections sont des bandes à pleine largeur (`.band`).
-- **Une seule couleur d'accent**, le vermillon `#ff3b00` : numéro du verset, progression, états actifs. Rien d'autre.
-- Papier `#efeee9`, encre `#121211`, plus un **mode sombre** automatique (`prefers-color-scheme`).
-- Deux familles : **Archivo Variable** (axes graisse *et* largeur) pour la typo démesurée, **JetBrains Mono Variable**
-  pour toute la signalétique (libellés, boutons, minutages) — toujours en capitales, interlettrage large.
-- Le survol **inverse** le bloc (fond encre, texte papier) ; le clic passe à l'accent. Transitions linéaires, 0,12 s.
-- Les repères (`VII`, `56`) sont l'élément visuel principal : il n'y a pas d'illustration.
+- **Fond blanc** `#fff`, contenu posé dans des **cartes** à fond clair `#f2f1f0`, **rayon 12 px**,
+  gouttière de 16 px. Une seule carte crème `#fff5bb` : le titre. Aucune ombre portée.
+- Palette « burnt peach », choisie par Isaure : crème `#fff5bb`, carte `#f2f1f0`, encre `#222`,
+  accent `#e27960`. L'accent existe en **deux forces** : `--rubric` pour les aplats (rail de
+  progression, survol du tirage) et `--rubric-deep` `#c25434` pour tout ce qui est écrit petit
+  ou doit rester lisible — messages d'erreur, anneaux de focus, et le numéro du verset.
+- **Pas de mode sombre**, à la demande d'Isaure. `color-scheme: light` est posé sur `:root` pour
+  que le navigateur n'assombrisse pas les champs. Ne pas réintroduire `prefers-color-scheme`.
+- Deux fontes, **auto-hébergées**, toutes deux de Collletttivo et sous SIL Open Font License 1.1 :
+  **Ortica Linear Light** (`--display`) pour les titres et les grands repères *uniquement*,
+  **Ronzino Regular 400** (`--sans`) pour tout le reste — texte, signalétique, boutons.
+  Les woff2 sont dans `src/assets/fonts/`, convertis depuis les `.otf` du Mac d'Isaure avec
+  `woff2_compress`. **Les notices `OFL-Ortica.txt` et `OFL-Ronzino.txt` doivent accompagner les
+  fontes** : la licence l'exige, ne pas les supprimer du dépôt.
+- Les interactions sont « juicy » : courbes à rebond (`cubic-bezier(0.34, 1.5, 0.64, 1)`),
+  survol qui soulève de 2–3 px, clic qui écrase à 0,96, tête du rail qui sort en ressort,
+  secousse du bloc de saisie sur erreur, détente du bouton de lecture à chaque bascule.
+  Tout est désactivé sous `prefers-reduced-motion`.
 
 Détails à ne pas casser :
-- La taille du chiffre romain suit sa longueur (`len-l`, `len-xl` dans `NowPlaying.vue`) : sans ça `XXXVIII` se coupe
-  en deux lignes. Les chiffres sont en `white-space: nowrap`, mais les **noms** (« Pare Daurat ») gardent le droit
-  de passer à la ligne.
-- La barre de commandes est en **flex**, pas en grille : en grille, la dernière rangée laissait une case vide grise
-  sur mobile.
-- Raccourcis clavier : espace (lecture), ← → (verset), R (tirage). Annoncés en pied de page via `t.shortcuts`.
+- **Le tirage est l'action principale** : pleine largeur, imprimée en plein, juste sous le titre,
+  grande cible, gros corps. Le public visé est âgé — ne jamais le reléguer dans une colonne,
+  derrière un survol, ou dans une petite zone de clic.
+- Les cartes `.pane` sont des **conteneurs** (`container-type: inline-size`) et leurs tailles
+  internes sont en **`cqi`**, pas en `vw` : la colonne de droite fait 400 px sur une page de
+  1400, donc une taille calibrée sur l'écran y serait énorme. Sortir un composant d'un `.pane`
+  casse ses tailles. Les points de rupture internes sont en `@container`, pas en `@media`.
+- La taille du chiffre romain suit sa longueur (`len-l`, `len-xl` dans `NowPlaying.vue`) : sans ça
+  `XXXVIII` se coupe en deux lignes. Les chiffres sont en `white-space: nowrap`, mais les **noms**
+  (« Pare Daurat ») gardent le droit de passer à la ligne.
+- La barre de commandes est en **flex**, pas en grille : en grille, la dernière rangée laissait une
+  case vide grise sur mobile.
+- Le rail de progression porte la mesure du `seek` — c'est `rail`, pas `bar`, qu'on interroge.
+  La zone de clic qui l'entoure est plus large, et sa marge fausserait le calcul.
+- Raccourcis clavier : espace (lecture), ← → (verset), R (tirage). Annoncés en pied de page.
+
+Retirés à la demande d'Isaure, ne pas remettre sans elle :
+- l'accroche « Escolta allò que l'atzar… » ;
+- le compte d'audios (« 2 809 àudios ») ;
+- la ligne « També : Preliminars / Lletanies ». **Conséquence** : le livre 0 et les litanies ne
+  sont plus atteignables depuis l'interface, seulement par lien direct (`#ca/0/0b`, `#ca/41/0`).
 
 ## Structure
 - `src/lib/catalog.ts` — charge `src/data/manifest.<lang>.json` (embarqués au build), URL audio, voisins, tirage.
@@ -76,7 +103,8 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
 
 ## État au 23/11/2026
 - Projet installé sur le Mac dans `~/Documents/workspace/Audio MR` (il n'existait que zippé dans
-  « EL MISSATGE RETROBAT EN AUDIO/Claude outputs/oracle-missatge-retrobat.zip »). Pas encore de dépôt git.
+  « EL MISSATGE RETROBAT EN AUDIO/Claude outputs/oracle-missatge-retrobat.zip »). Dépôt git local,
+  pas de remote : `bc9b8dd` l'ivoire d'origine, `1287a0c` le brutalisme, puis le design « spécimen ».
 - **Conversion CA terminée** : 2 809 pistes (2 810 moins `00000a`), 803 Mo dans
   `EL MISSATGE RETROBAT EN AUDIO/_web/ca`. Les 2 809 fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
 - Un piège rencontré : l'arrêt « disque plein » avait laissé `02075.m4a` tronqué à 44 octets, et la reprise le
@@ -84,8 +112,11 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   renomme le `.part.m4a` que s'il dépasse cette taille. Fichier réparé.
 - Testé en local avec les vrais audios (Chromium) : lecture, tirage, verset précédent / suivant, liens directs
   `#ca/7/56`, `#ca/0/0b`, livres récemment convertis (XL). Console propre.
-- Nouveau design vérifié en clair et en sombre, en 1149 px et en 375 px. Build : 444 Ko, 13 fichiers.
-- **Pas encore vérifié sur Safari** (ni l'ancien design, ni le nouveau).
+- Design « spécimen » vérifié dans le panneau Chromium, en large et en 375 px : titre, tirage (animation
+  des chiffres puis lecture), `XXXVIII` sur une ligne, livre 0 (« Preliminars / Pare Daurat »), lecture,
+  rail de progression. Vérifié aussi que la page reste claire quand le système est en sombre.
+  Build : **224 Ko, 7 fichiers**.
+- **Pas encore vérifié sur Safari**, aucun des trois designs.
 - Pour le test local, `public/audio/ca` est un **lien symbolique** vers `…/_web/ca` (évite de dupliquer 803 Mo).
   `public/audio` est dans `.gitignore`. Attention : `npm run build` copierait ces 803 Mo dans `dist/` —
   enlever le lien avant un build, ou garder les audios hors de `public/` et passer par `VITE_AUDIO_BASE`.

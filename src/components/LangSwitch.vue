@@ -18,19 +18,26 @@ import { LANGS, lang, setLang } from '../lib/i18n'
 </template>
 
 <style scoped>
-.langs { display: flex; }
+.langs { display: flex; gap: 2px; }
+/* La langue courante prend la pastille blanche, comme l'onglet actif du spécimen. */
 button {
   appearance: none;
   border: 0;
+  border-radius: 999px;
   background: transparent;
-  color: var(--dim);
-  font: 500 0.66rem/1 var(--mono);
-  letter-spacing: 0.2em;
-  padding: 6px 9px;
+  color: var(--ink);
+  opacity: 0.55;
+  font: 400 0.85rem/1 var(--sans);
+  letter-spacing: 0.04em;
+  padding: 8px 13px;
   cursor: pointer;
-  transition: color 0.12s linear, background 0.12s linear;
+  transition:
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease,
+    opacity 0.2s ease;
 }
-button:hover { color: var(--ink); }
-button.on { background: var(--ink); color: var(--paper); }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button:hover { opacity: 1; transform: translateY(-1px); }
+button:active { transform: scale(0.94); }
+button.on { background: var(--bg); opacity: 1; }
+button:focus-visible { outline: 2px solid var(--rubric-deep); outline-offset: 2px; }
 </style>

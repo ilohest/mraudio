@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { t, lang } from '../lib/i18n'
 import { parseBook, toRoman } from '../lib/roman'
-import { FIRST_BOOK, LAST_BOOK, LITANIES_BOOK, PRELIM_BOOK, type Catalog, type Track } from '../lib/catalog'
+import { FIRST_BOOK, LAST_BOOK, type Catalog, type Track } from '../lib/catalog'
 
 const props = defineProps<{ catalog: Catalog }>()
 const emit = defineEmits<{ pick: [Track] }>()
@@ -49,32 +49,33 @@ function onBookInput() {
   if (splitCombined()) verseEl.value?.focus()
 }
 
+/* Une erreur secoue le bloc : à l'écran, c'est plus clair qu'une ligne de texte de plus. */
+const shaking = ref(false)
+function fail(msg: string) {
+  message.value = msg
+  shaking.value = false
+  requestAnimationFrame(() => (shaking.value = true))
+  setTimeout(() => (shaking.value = false), 500)
+}
+
 function submit() {
   message.value = ''
-  if (!bookInput.value.trim()) return (message.value = t.value.errEmptyBook)
-  if (!bookOk.value) return (message.value = t.value.errBook(LAST_BOOK))
+  if (!bookInput.value.trim()) return fail(t.value.errEmptyBook)
+  if (!bookOk.value) return fail(t.value.errBook(LAST_BOOK))
   const verse = verseInput.value.trim() === '' ? 0 : parseInt(verseInput.value, 10)
   const [min, max] = range.value!
-  if (isNaN(verse) || verse < min || verse > max) return (message.value = t.value.errVerse(min, max))
+  if (isNaN(verse) || verse < min || verse > max) return fail(t.value.errVerse(min, max))
   const tr = props.catalog.find(book.value!, verse)
-  if (!tr) return (message.value = t.value.errMissing)
+  if (!tr) return fail(t.value.errMissing)
   emit('pick', tr)
 }
-
-function pickSpecial(b: number) {
-  const tr = props.catalog.versesOf(b)[0]
-  if (tr) emit('pick', tr)
-}
-
-const hasPrelim = computed(() => props.catalog.versesOf(PRELIM_BOOK).length > 0)
-const hasLitanies = computed(() => props.catalog.versesOf(LITANIES_BOOK).length > 0)
 </script>
 
 <template>
   <form class="picker" @submit.prevent="submit" novalidate>
-    <p class="micro head">{{ t.chooseTitle }}</p>
+    <p class="head">{{ t.chooseTitle }}</p>
 
-    <div class="grid">
+    <div class="grid" :class="{ shaking }">
       <label class="cell">
         <span class="micro">{{ t.book }}</span>
         <input
@@ -110,109 +111,112 @@ const hasLitanies = computed(() => props.catalog.versesOf(LITANIES_BOOK).length 
         />
         <span class="micro hint">{{ range ? `${range[0]} – ${range[1]}` : '&nbsp;' }}</span>
       </label>
-
-      <button class="cell go" type="submit" :aria-label="t.listen">
-        <span>{{ t.listen }}</span>
-        <span class="arrow" aria-hidden="true">⟶</span>
-      </button>
     </div>
 
-    <p class="msg" role="status" aria-live="polite">{{ message }}</p>
+    <button class="go" type="submit">
+      <span>{{ t.listen }}</span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </button>
 
-    <p v-if="hasPrelim || hasLitanies" class="also">
-      <span class="micro">{{ t.also }}</span>
-      <button v-if="hasPrelim" type="button" class="btn chip" @click="pickSpecial(PRELIM_BOOK)">{{ t.preliminary }}</button>
-      <button v-if="hasLitanies" type="button" class="btn chip" @click="pickSpecial(LITANIES_BOOK)">{{ t.litanies }}</button>
-    </p>
+    <p class="msg" role="status" aria-live="polite">{{ message }}</p>
   </form>
 </template>
 
 <style scoped>
-.picker { padding: clamp(20px, 3.5vw, 32px) 0 clamp(22px, 4vw, 36px); }
-.head { padding: 0 var(--gutter) 16px; }
+.picker { padding: var(--pad); }
+
+/* Intitulé de section, souligné d'un filet : la ligne de notice du spécimen. */
+.head {
+  margin: 0 0 16px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+  font: 400 1.06rem/1.3 var(--sans);
+  color: var(--ink);
+}
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 1px;
-  background: var(--hair);
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
+.grid.shaking { animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+/* Chaque champ est une petite carte blanche posée sur la carte grise. */
 .cell {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-content: start;
-  background: var(--paper);
-  padding: 14px var(--gutter) 13px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 12px 14px 10px;
   min-width: 0;
+  transition: border-color 0.2s ease, transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.cell:focus-within { border-color: var(--ink); transform: translateY(-2px); }
 
 .num {
   width: 100%;
   min-width: 0;
   font-family: var(--display);
-  font-weight: 700;
-  font-stretch: 112%;
-  font-size: clamp(2.2rem, 7vw, 3.6rem);
-  line-height: 0.95;
-  letter-spacing: -0.03em;
+  font-weight: 300;
+  font-size: clamp(1.9rem, 13cqi, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
   color: var(--ink);
   background: transparent;
   border: 0;
   padding: 0;
-  font-variant-numeric: tabular-nums lining-nums;
+  font-variant-numeric: lining-nums;
 }
-.num::placeholder { color: var(--hair); }
+.num::placeholder { color: var(--line); }
 .num:focus { outline: none; }
-.cell:focus-within { background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }
-.num[aria-invalid='true'] { color: var(--accent); }
-.hint { font-size: 0.6rem; }
-.hint.bad { color: var(--accent); }
+.num[aria-invalid='true'] { color: var(--rubric-deep); }
+.hint { font-size: 0.8rem; }
+.hint.bad { color: var(--rubric-deep); }
 
+/* Deuxième action de la page : large, cerclée d'encre, jamais cachée. */
 .go {
   appearance: none;
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
+  width: 100%;
+  margin-top: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 14px clamp(18px, 3vw, 32px);
-  font: 600 0.7rem/1 var(--mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink);
+  padding: 17px 20px;
+  font: 400 1.05rem/1.2 var(--sans);
   cursor: pointer;
-  transition: background 0.12s linear;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.5, 0.64, 1),
+    background 0.2s ease,
+    color 0.2s ease;
 }
-.go .arrow { font-size: 1.2rem; transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.go:hover { background: var(--accent); color: #fff; }
-.go:hover .arrow { transform: translateX(8px); }
-.go:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.go .arrow {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  transition: transform 0.34s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+.go:hover { background: var(--ink); color: var(--bg); transform: translateY(-3px); }
+.go:hover .arrow { transform: translateX(10px); }
+.go:active { transform: scale(0.98); }
+.go:focus-visible { outline: 3px solid var(--rubric-deep); outline-offset: 3px; }
 
 .msg {
   margin: 0;
-  min-height: 1.4em;
-  padding: 12px var(--gutter) 0;
-  font: 500 0.68rem/1.4 var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.also {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 10px 0 0;
-  padding: 0 var(--gutter);
-}
-.chip { padding: 10px 14px; }
-
-@media (max-width: 620px) {
-  .grid { grid-template-columns: 1fr 1fr; }
-  .go { grid-column: 1 / -1; }
+  min-height: 1.5em;
+  padding-top: 12px;
+  font: 400 0.95rem/1.4 var(--sans);
+  color: var(--rubric-deep);
 }
 </style>
