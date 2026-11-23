@@ -30,12 +30,29 @@ const standing = computed(() => {
   if (!props.track) return { kicker: '', name: t.value.chooseTitle }
   const l = label.value!
   if (!l.numeral) return { kicker: l.kicker, name: l.big }
-  if (props.track.verse === 0) return { kicker: '', name: t.value.epigraphs }
   return null
 })
 
+/** Sans accents ni casse : « Epigrafes » doit valoir « Epígrafes ». */
+const plain = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+
+/**
+ * Le verset 0 d'un livre, ce sont ses épigraphes : la case l'écrit en toutes lettres plutôt
+ * qu'en chiffre, parce que c'est bien un verset et que « 0 » ne dit rien à personne.
+ * La saisie accepte les deux, et le mot sans ses accents.
+ */
+function readVerse(raw: string): number | null {
+  const s = raw.trim()
+  if (s === '') return 0
+  if (/^\d+$/.test(s)) return parseInt(s, 10)
+  return plain(s) === plain(t.value.epigraphs) ? 0 : null
+}
 const bookInput = ref('')
 const verseInput = ref('')
+const verseIsWord = computed(() => {
+  const s = verseInput.value.trim()
+  return !!s && !/^\d+$/.test(s)
+})
 const message = ref('')
 const verseEl = ref<HTMLInputElement | null>(null)
 
@@ -47,7 +64,7 @@ function syncFromTrack() {
     return
   }
   bookInput.value = toRoman(tr.book)
-  verseInput.value = tr.verse > 0 ? String(tr.verse) : ''
+  verseInput.value = tr.verse > 0 ? String(tr.verse) : t.value.epigraphs
 }
 
 /* Tirage : deux rouleaux qui glissent et se posent l'un après l'autre. Le défilé est
@@ -129,7 +146,18 @@ const bookHint = computed(() => {
   const roman = toRoman(book.value!)
   return raw.toUpperCase() === roman ? '' : roman
 })
-const verseHint = computed(() => (rolling.value || !range.value ? '' : `${range.value[0]} – ${range.value[1]}`))
+/**
+ * Le dernier verset d'un livre est son hypographe, comme le verset 0 en est l'épigraphe.
+ * Il garde son numéro — contrairement au verset 0, celui-ci veut dire quelque chose — et
+ * c'est la ligne d'indication qui le nomme. Elle réagit à la saisie, pas seulement à ce
+ * qui joue : taper le dernier numéro suffit à l'annoncer.
+ */
+const verseHint = computed(() => {
+  if (rolling.value || !range.value) return ''
+  const v = readVerse(verseInput.value)
+  if (v !== null && v > 0 && v === range.value[1]) return t.value.hypographs
+  return `${range.value[0]} – ${range.value[1]}`
+})
 
 /* Le bouton n'apparaît que si la saisie ne décrit plus ce qui joue : il enseigne
    l'interaction au moment où on la découvre, sans encombrer le reste du temps. */
@@ -138,7 +166,7 @@ const dirty = computed(() => {
   const tr = props.track
   const raw = verseInput.value.trim()
   if (!tr || !label.value?.numeral) return !!bookInput.value.trim() || !!raw
-  return book.value !== tr.book || (raw === '' ? 0 : parseInt(raw, 10)) !== tr.verse
+  return book.value !== tr.book || readVerse(raw) !== tr.verse
 })
 /**
  * « Escoltar » et « Reproduir » promettaient tous deux du son : ils n'en font plus qu'un.
@@ -171,6 +199,29 @@ function onBookInput() {
   if (splitCombined()) verseEl.value?.focus()
 }
 
+/**
+ * Flèches haut et bas dans un champ : on fait défiler le numéro, comme sur un compteur.
+ * Gauche et droite restent au curseur, sans quoi on ne pourrait plus corriger « XXXVIII ».
+ * Avec Majuscule, le pas est de dix — les livres en comptent jusqu'à cent-dix versets.
+ * Rien ne bouge si le champ est vide : il n'y a alors aucun numéro à faire défiler.
+ */
+function bumpBook(dir: 1 | -1, big: boolean) {
+  const b = parseBook(bookInput.value)
+  if (b === null) return
+  bookInput.value = toRoman(Math.min(LAST_BOOK, Math.max(FIRST_BOOK, b + dir * (big ? 10 : 1))))
+  message.value = ''
+}
+
+function bumpVerse(dir: 1 | -1, big: boolean) {
+  if (!range.value || !verseInput.value.trim()) return
+  const v = readVerse(verseInput.value)
+  if (v === null) return
+  const [min, max] = range.value
+  const next = Math.min(max, Math.max(min, v + dir * (big ? 10 : 1)))
+  verseInput.value = next === 0 ? t.value.epigraphs : String(next)
+  message.value = ''
+}
+
 /* Une erreur secoue le bloc : à l'écran, c'est plus clair qu'une ligne de texte de plus. */
 const shaking = ref(false)
 function fail(msg: string) {
@@ -184,10 +235,9 @@ function submit() {
   message.value = ''
   if (!bookInput.value.trim()) return fail(t.value.errEmptyBook)
   if (!bookOk.value) return fail(t.value.errBook(LAST_BOOK))
-  const raw = verseInput.value.trim()
-  const verse = raw === '' ? 0 : parseInt(raw, 10)
+  const verse = readVerse(verseInput.value)
   const [min, max] = range.value!
-  if (isNaN(verse) || verse < min || verse > max) return fail(t.value.errVerse(min, max))
+  if (verse === null || verse < min || verse > max) return fail(t.value.errVerse(min, max))
   const tr = props.catalog.find(book.value!, verse)
   if (!tr) return fail(t.value.errMissing)
   emit('pick', tr)
@@ -253,7 +303,7 @@ const chainOpts = computed(() => [
     </p>
 
     <!-- Le repère et la saisie sont le même objet : on tape dans les chiffres qu'on lit. -->
-    <div class="hero" :class="{ shaking }">
+    <div class="hero" :class="[heroSize, { shaking }]">
       <label class="slot">
         <span class="micro">{{ t.book }}</span>
         <span class="field">
@@ -269,7 +319,6 @@ const chainOpts = computed(() => [
             v-else
             v-model="bookInput"
             class="mega"
-            :class="heroSize"
             type="text"
             inputmode="text"
             autocomplete="off"
@@ -281,6 +330,8 @@ const chainOpts = computed(() => [
             :aria-invalid="!!bookInput.trim() && !bookOk"
             @input="onBookInput"
             @keydown="onBookKey"
+            @keydown.up.prevent="bumpBook(1, $event.shiftKey)"
+            @keydown.down.prevent="bumpBook(-1, $event.shiftKey)"
           />
         </span>
         <span class="micro hint" :class="{ bad: !!bookInput.trim() && !bookOk }">{{ bookHint || '&nbsp;' }}</span>
@@ -292,7 +343,7 @@ const chainOpts = computed(() => [
           <Reel
             v-if="rolling"
             class="mega accent"
-            :class="heroSize"
+            :class="{ word: verseIsWord }"
             :items="verseReel"
             :land-at="verseReel.length - 1 - SPARES"
             :duration="2050"
@@ -303,16 +354,18 @@ const chainOpts = computed(() => [
             ref="verseEl"
             v-model="verseInput"
             class="mega accent"
-            :class="heroSize"
+            :class="{ word: verseIsWord }"
             type="text"
             inputmode="numeric"
             pattern="[0-9]*"
             autocomplete="off"
-            maxlength="3"
+            maxlength="16"
             placeholder="56"
             :aria-label="t.verse"
             @input="message = ''"
             @keydown.enter.prevent="submit"
+            @keydown.up.prevent="bumpVerse(1, $event.shiftKey)"
+            @keydown.down.prevent="bumpVerse(-1, $event.shiftKey)"
           />
         </span>
         <span class="micro hint">{{ verseHint || '&nbsp;' }}</span>
@@ -454,7 +507,14 @@ const chainOpts = computed(() => [
    */
   --around: calc(2 * var(--pad) + 3.8rem);
   --fit: calc((100cqh - var(--around)) / 1.12);
+  /* Taille de référence des deux cases. Elle est portée par le repère, pas par chaque
+     champ : la hauteur des boîtes en dépend, et c'est ce qui garde les filets alignés
+     même quand une case écrit un mot au lieu d'un nombre. */
+  --num: clamp(2.2rem, min(15cqi, var(--fit)), 8.5rem);
 }
+/* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
+.hero.len-l { --num: clamp(1.9rem, min(11.5cqi, var(--fit)), 6.4rem); }
+.hero.len-xl { --num: clamp(1.5rem, min(9cqi, var(--fit)), 5rem); }
 /**
  * Le repère ne mesure sa propre hauteur que là où il en a une d'imposée : la vue tient
  * l'écran ET un verset joue. Tant que rien ne joue, la carte suit son contenu — mesurer
@@ -522,7 +582,7 @@ const chainOpts = computed(() => [
   color: var(--ink);
   font-family: var(--display);
   font-weight: 300;
-  font-size: clamp(2.2rem, min(15cqi, var(--fit)), 8.5rem);
+  font-size: var(--num);
   line-height: 0.95;
   letter-spacing: -0.012em;
   font-variant-numeric: lining-nums;
@@ -534,12 +594,14 @@ const chainOpts = computed(() => [
  * déborder le repère sur le rail ; et sans elle, le passage du rouleau au champ à la fin
  * d'un tirage décalait la mise en page.
  */
-input.mega { height: 1.12em; }
+input.mega { height: calc(var(--num) * 1.12); }
 .mega:focus { outline: none; }
 .mega::placeholder { color: var(--line); }
-/* Plus le chiffre romain est long, plus on resserre : il doit tenir sur une ligne. */
-.mega.len-l { font-size: clamp(1.9rem, min(11.5cqi, var(--fit)), 6.4rem); }
-.mega.len-xl { font-size: clamp(1.5rem, min(9cqi, var(--fit)), 5rem); }
+/* « Epígrafes » à la place d'un numéro : même boîte, autre échelle. */
+.mega.word {
+  font-size: clamp(1.1rem, calc(var(--num) * 0.34), 2.6rem);
+  letter-spacing: -0.005em;
+}
 
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }

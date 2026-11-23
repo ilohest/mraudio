@@ -53,8 +53,18 @@ dessous. Il n'y a plus de composant `VersePicker` — il faisait doublon avec le
   une carte déjà pleine comprimait le repère sous sa propre hauteur, dont le contenu débordait
   alors de sa case et passait sous le bouton. Ne pas réintroduire de bloc dépliant ici sans
   rendre au repère la hauteur correspondante.
-- Les préliminaires, les litanies et les épigraphes n'ont pas de numéro : leur nom s'affiche
-  au-dessus des champs, laissés vides.
+- Les préliminaires et les litanies n'ont pas de numéro : leur nom s'affiche au-dessus des
+  champs, laissés vides.
+- **Structure d'un livre** (indiquée par Isaure le 23/11/2026) : le verset 0 en est l'épigraphe
+  et le dernier verset l'hypographe. L'épigraphe s'écrit **en toutes lettres à la place du
+  numéro** — « 0 » ne dit rien à personne — tandis que l'hypographe **garde son numéro**, qui
+  lui veut dire quelque chose, et c'est la ligne d'indication qui le nomme. La saisie accepte
+  le mot comme le chiffre, accents et casse indifférents (`readVerse`).
+  ⚠ Les mots **« Hipògrafs » (CA) et « Hipógrafes » (ES) sont des constructions par analogie**
+  avec « Epígrafs » / « Epígrafes » : à faire confirmer. Seul « Hypographes » (FR) est sûr.
+- **Flèches haut et bas dans un champ** : elles font défiler le numéro, avec un pas de dix si
+  Majuscule est enfoncée. Gauche et droite restent au curseur, sans quoi on ne pourrait plus
+  corriger « XXXVIII ». Rien ne bouge si le champ est vide.
 
 **Écoute suivie** (« podcast »), demandée le 23/11/2026 : un réglage, pas une action. « En acabar
 el verset : s'arrêter / suivre dans l'ordre / un autre au hasard », en bas de la carte du lecteur.
@@ -206,7 +216,8 @@ Particularités (ES), relevées le 23/11/2026 sur `~/Downloads/Audios MR 2` (2 8
   séparation père / mère ni « La llum ». 83,6 s contre 61,2 + 50,0 s en catalan : ce n'est pas
   la simple somme des deux, **à vérifier avec la cliente** (manque-t-il des fichiers ?).
 - **Trois versets manquent** par rapport au catalan : livre 3 verset 78, livre 12 verset 79,
-  livre 37 verset 70. Inversement le livre 38 a des épigraphes en espagnol, pas en catalan, et
+  livre 37 verset 70. **Deux d'entre eux sont le dernier verset de leur livre** (12 et 37),
+  donc des hypographes — le genre de pièce enregistrée à part, et oubliée à part. Inversement le livre 38 a des épigraphes en espagnol, pas en catalan, et
   `04000T` n'existe qu'en catalan.
 - **`0333(1)` et `0344(1)` ne sont pas des doublons** : leurs vingt premières secondes diffèrent,
   ce sont de vraies seconde prises (40,7 s contre 42,6 · 30,8 contre 31,7). `1507(1)`, lui, est
@@ -226,7 +237,9 @@ Particularités (CA) :
 - `41000Lletanies.m4a` → id 41000, « Lletanies ».
 - `04000T.wav` → id 04000t (10 s, contre 44 s pour `04000`) : rangé en 2e piste d'épigraphes du livre IV,
   **toujours à confirmer** — la cliente doit l'écouter.
-- Le livre 38 commence au verset 1 (pas d'épigraphes).
+- Le livre 38 commence au verset 1 : **c'est probablement un fichier manquant, pas une
+  particularité.** Vérifié le 23/11/2026 : les 40 livres espagnols ont tous leur verset 0, et
+  le catalan n'en manque qu'un seul, celui du livre 38. À demander à la cliente.
 - Beaucoup de `.ogg` contiennent en fait de l'AAC ; le livre IV est en WAV 4 canaux 16 kHz.
   → tout est converti en AAC mono 64 kbps `.m4a` (+faststart) : `<out>/<lang>/<LL>/<id>.m4a`.
 - Le tirage exclut verset 0, livre 0 et livre 41.
@@ -270,6 +283,13 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   `_web` en ligne — c'est là qu'il faudra récupérer de la place avant le français.
 - Sur le serveur Hostinger, `wp-content/uploads/audios/` (FR/CAT/ES, ~3 Go de MP3 de livres entiers) a été créé
   lors d'une tâche précédente : sans rapport avec cette app, peut être supprimé.
+
+## Ce qui n'a pas été vérifié
+
+- Que le verset 0 soit bien l'épigraphe d'un livre est une **convention héritée du prototype**
+  (`labels.ts`, ce fichier), pas une vérification. Personne ici n'a écouté les pistes.
+  Les durées ne tranchent pas : le verset 0 fait 0,87 fois la médiane du corps du livre et le
+  dernier verset 0,97 fois — aucune signature distinctive. Seule la cliente peut confirmer.
 
 ## À faire
 - Le français, quand les audios arriveront.
