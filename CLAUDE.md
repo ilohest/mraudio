@@ -220,9 +220,11 @@ Particularités (ES), relevées le 23/11/2026 sur `~/Downloads/Audios MR 2` (2 8
   donc des hypographes — le genre de pièce enregistrée à part, et oubliée à part. Inversement le livre 38 a des épigraphes en espagnol, pas en catalan, et
   `04000T` n'existe qu'en catalan.
 - **`0333(1)` et `0344(1)` ne sont pas des doublons** : leurs vingt premières secondes diffèrent,
-  ce sont de vraies seconde prises (40,7 s contre 42,6 · 30,8 contre 31,7). `1507(1)`, lui, est
-  bien identique. Le script garde le fichier de base dans les trois cas — **la cliente doit
-  écouter les deux premières paires et dire laquelle garder**.
+  ce sont de vraies secondes prises. **Isaure a écouté le 23/11/2026 et choisi les deux secondes
+  prises** (42,6 s et 31,7 s, contre 40,7 et 30,8). D'où la liste `PREFER` dans
+  `scripts/audio.mjs` : elle fait exception à la règle qui écarte tout fichier « (1) », juste
+  pour ces deux identifiants. `1507(1)`, lui, est bien une copie à l'identique et reste écarté.
+  Les premières prises sont laissées dans le dossier source, qui partira entier.
 - Piège macOS : les accents sont stockés en forme décomposée, donc « Letanías » lu sur le disque
   ne ressemble pas à « Letanías » écrit dans le script. Les noms sont normalisés en NFC avant
   toute comparaison, sans quoi le dossier des litanies passait à la trappe en silence.
@@ -320,8 +322,6 @@ que le sien : rien ne doit partir sur le compte d'un tiers.
 
 ## À faire
 - Le français, quand les audios arriveront.
-- Faire écouter à la cliente les paires `0333` / `0333(1)` et `0344` / `0344(1)` du livre III
-  espagnol : ce sont deux prises différentes, c'est à elle de choisir.
 - Lui signaler les trois versets espagnols manquants (3/78, 12/79, 37/70) et l'unique
   préliminaire espagnol, au cas où des fichiers manqueraient.
 - Confirmer `04000T` (la cliente doit l'écouter) ; récupérer les noms ES / FR du livre 0.

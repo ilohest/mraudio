@@ -50,6 +50,18 @@ const DROP = new Set(['00000a'])
 /** Fichiers isolés, nommés en toutes lettres, à rattacher à un identifiant. */
 const NAMED = new Map([['oraciones del padre y de la madre', '00000b']])
 
+/**
+ * Versets enregistrés deux fois, où la cliente a écouté et choisi la seconde prise.
+ * Sans cette liste, la règle générale écarte tout fichier « (1) » — ce qui est juste quand
+ * c'est une copie à l'identique, mais faux quand c'est une vraie prise différente.
+ * Clé : l'identifiant de la piste ; valeur : le nom du fichier à prendre, sans extension.
+ */
+const PREFER = new Map([
+  ['03033', '0333(1)'], // ES, livre III verset 33 — choisis par Isaure le 23/11/2026
+  ['03044', '0344(1)'], // ES, livre III verset 44
+])
+const PREFERRED = new Map([...PREFER].map(([id, stem]) => [stem.toLowerCase(), id]))
+
 const ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 }
 
 /** « LIBRO XXXVII » → 37. « LIBRO XXXX » → 40 : le dossier espagnol écrit le quarantième ainsi. */
@@ -86,6 +98,10 @@ function toId(file) {
   // macOS range les accents en forme décomposée : « í » y est un « i » suivi d'un accent.
   // Sans normalisation, « Letanías » ne ressemble pas à « Letanías ».
   const stem = basename(file, extname(file)).normalize('NFC')
+
+  // Une prise choisie l'emporte sur la règle qui écarte les « (1) ».
+  const choisi = PREFERRED.get(stem.toLowerCase())
+  if (choisi) return choisi
   if (stem.includes('(')) return null
 
   const named = NAMED.get(stem.toLowerCase())
@@ -110,6 +126,7 @@ const skipped = []
 const dropped = []
 const mismatched = []
 const litanies = []
+const choisis = new Set()
 
 for (const file of walk(src).sort()) {
   if (!AUDIO_EXT.has(extname(file).toLowerCase())) continue
@@ -132,7 +149,14 @@ for (const file of walk(src).sort()) {
     continue
   }
 
-  if (!found.has(id)) found.set(id, file)
+  // Une prise choisie fixe l'identifiant : aucun autre fichier ne doit le reprendre.
+  const stem = basename(file, extname(file)).normalize('NFC').toLowerCase()
+  if (PREFERRED.has(stem)) {
+    found.set(id, file)
+    choisis.add(id)
+  } else if (!found.has(id) && !choisis.has(id)) {
+    found.set(id, file)
+  }
 }
 
 litanies.sort((a, b) => a.from - b.from)
@@ -153,6 +177,7 @@ if (skipped.length) console.log(`  ignorés (${skipped.length}) : ${skipped.slic
 if (dropped.length) console.log(`  écartés volontairement (${dropped.length}) : ${dropped.join(', ')}`)
 if (mismatched.length) console.log(`  ⚠ livre du nom ≠ livre du dossier (${mismatched.length}) : ${mismatched.join(', ')}`)
 if (litanies.length) console.log(`  litanies en ${litanies.length} plages → ${litanies.map((_, i) => '41000' + String.fromCharCode(97 + i)).join(', ')}`)
+if (choisis.size) console.log(`  prises choisies par la cliente (${choisis.size}) : ${[...choisis].map((id) => `${id} ← ${PREFER.get(id)}`).join(', ')}`)
 
 if (args.convert) {
   const jobs = [...found.entries()]
