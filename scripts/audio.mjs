@@ -6,8 +6,18 @@
  *   node scripts/audio.mjs --lang es --src "/chemin/AUDIOS MR" --out ./audio-web --convert
  *
  * - Parcourt --src récursivement (structure plate « 01005.ogg » OU sous-dossiers « 01/01005.ogg »).
- * - Nom attendu : 2 chiffres (livre) + 3 chiffres (verset) [+ 1 lettre optionnelle], ex. 07056.ogg, 00000a.m4a.
- *   « 41000Lletanies.m4a » → 41000. Les copies « 28004(1).ogg » sont ignorées.
+ * - Deux nommages sont reconnus, parce que les deux jeux d'audios reçus ne se ressemblent pas :
+ *     catalan  « 07056.ogg » = 2 chiffres (livre) + 3 chiffres (verset) [+ 1 lettre],
+ *               « 00000a.m4a », « 41000Lletanies.m4a » → 41000 ;
+ *     espagnol « 0765.mp3 » = 2 chiffres (livre) + 2 chiffres (verset), le verset n'étant pas
+ *               rempli à trois chiffres ; au-delà de 99 il en prend trois (« 03100 »), ce qui
+ *               retombe sur la forme catalane. Le livre est recoupé avec le dossier
+ *               (« LIBRO VII », et « LIBRO XXXX » pour le quarantième).
+ *   Deux cas espagnols à part : le dossier « Letanías » contient quatre plages au lieu d'une
+ *   piste unique (→ 41000a…d, dans l'ordre des plages), et « Oraciones del Padre y de la Madre »
+ *   est à la racine (→ 00000b, le seul préliminaire espagnol).
+ *   Les copies « 28004(1).ogg » sont ignorées — en espagnol ce sont parfois de vraies secondes
+ *   prises, pas des doublons : voir CLAUDE.md, la cliente doit trancher.
  * - Écrit src/data/manifest.<lang>.json (embarqué dans l'app au build).
  * - Avec --convert : convertit tout en AAC mono 64 kbps → <out>/<lang>/<livre>/<id>.m4a (ffmpeg requis).
  *   Les fichiers déjà convertis sont sautés : on peut relancer sans risque.
@@ -37,6 +47,32 @@ const AUDIO_EXT = new Set(['.mp3', '.m4a', '.ogg', '.oga', '.wav', '.aac', '.fla
 /** Pistes écartées à la demande de la cliente : « 00000a » ne doit pas apparaître. */
 const DROP = new Set(['00000a'])
 
+/** Fichiers isolés, nommés en toutes lettres, à rattacher à un identifiant. */
+const NAMED = new Map([['oraciones del padre y de la madre', '00000b']])
+
+const ROMAN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 }
+
+/** « LIBRO XXXVII » → 37. « LIBRO XXXX » → 40 : le dossier espagnol écrit le quarantième ainsi. */
+function bookFromFolder(name) {
+  const m = name.match(/^LIBROS?\s+([IVXLCDM]+)$/i)
+  if (!m) return null
+  const s = m[1].toUpperCase()
+  if (s === 'XXXX') return 40
+  let n = 0, last = 0
+  for (const ch of [...s].reverse()) {
+    const v = ROMAN[ch]
+    if (v < last) n -= v
+    else { n += v; last = v }
+  }
+  return n
+}
+
+/** « Letanías 106-144 » → 106, le début de plage, qui donne l'ordre des parties. */
+function litanyRange(stem) {
+  const m = stem.match(/(\d+)\s*[-–]\s*(\d+)/)
+  return m ? parseInt(m[1], 10) : null
+}
+
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
     if (name.startsWith('.') || name.startsWith('_')) return []
@@ -45,26 +81,62 @@ function walk(dir) {
   })
 }
 
-/** "07056.ogg" → "07056" · "00000a.m4a" → "00000a" · "41000Lletanies.m4a" → "41000" · "28004(1).ogg" → null */
+/** "07056.ogg" → "07056" · "00000a" → "00000a" · "41000Lletanies" → "41000" · "0765.mp3" → "07065" */
 function toId(file) {
-  const stem = basename(file, extname(file))
+  // macOS range les accents en forme décomposée : « í » y est un « i » suivi d'un accent.
+  // Sans normalisation, « Letanías » ne ressemble pas à « Letanías ».
+  const stem = basename(file, extname(file)).normalize('NFC')
   if (stem.includes('(')) return null
-  const m = stem.match(/^(\d{5})([a-z]?)(.*)$/i)
-  if (!m) return null
-  const letter = m[3] ? '' : m[2] // une lettre seule = sous-partie ; sinon c'est un libellé
-  return (m[1] + letter).toLowerCase()
+
+  const named = NAMED.get(stem.toLowerCase())
+  if (named) return named
+
+  // Catalan, et espagnol au-delà du verset 99 : livre sur 2, verset sur 3.
+  const full = stem.match(/^(\d{5})([a-z]?)(.*)$/i)
+  if (full) {
+    const letter = full[3] ? '' : full[2] // une lettre seule = sous-partie ; sinon c'est un libellé
+    return (full[1] + letter).toLowerCase()
+  }
+
+  // Espagnol : livre sur 2, verset sur 2 — à remplir à trois chiffres.
+  const short = stem.match(/^(\d{2})(\d{2})$/)
+  if (short) return short[1] + short[2].padStart(3, '0')
+
+  return null
 }
 
 const found = new Map()
 const skipped = []
 const dropped = []
+const mismatched = []
+const litanies = []
+
 for (const file of walk(src).sort()) {
   if (!AUDIO_EXT.has(extname(file).toLowerCase())) continue
+  const folder = basename(dirname(file)).normalize('NFC')
+
+  // Les litanies espagnoles sont découpées en plages : on les numérote après coup, dans l'ordre.
+  if (/^letan[ií]as?$/i.test(folder)) {
+    const from = litanyRange(basename(file, extname(file)).normalize('NFC'))
+    if (from !== null) { litanies.push({ from, file }); continue }
+  }
+
   const id = toId(file)
   if (!id) { skipped.push(file.slice(src.length + 1)); continue }
   if (DROP.has(id)) { dropped.push(file.slice(src.length + 1)); continue }
+
+  // Garde-fou : le livre lu dans le nom doit être celui du dossier.
+  const book = bookFromFolder(folder)
+  if (book !== null && parseInt(id.slice(0, 2), 10) !== book) {
+    mismatched.push(file.slice(src.length + 1))
+    continue
+  }
+
   if (!found.has(id)) found.set(id, file)
 }
+
+litanies.sort((a, b) => a.from - b.from)
+litanies.forEach(({ file }, i) => found.set(`41000${String.fromCharCode(97 + i)}`, file))
 
 const books = {}
 for (const id of [...found.keys()].sort()) {
@@ -79,6 +151,8 @@ writeFileSync(join(dataDir, `manifest.${lang}.json`), JSON.stringify(manifest))
 console.log(`✓ ${found.size} audios → src/data/manifest.${lang}.json (${Object.keys(books).length} livres)`)
 if (skipped.length) console.log(`  ignorés (${skipped.length}) : ${skipped.slice(0, 12).join(', ')}${skipped.length > 12 ? '…' : ''}`)
 if (dropped.length) console.log(`  écartés volontairement (${dropped.length}) : ${dropped.join(', ')}`)
+if (mismatched.length) console.log(`  ⚠ livre du nom ≠ livre du dossier (${mismatched.length}) : ${mismatched.join(', ')}`)
+if (litanies.length) console.log(`  litanies en ${litanies.length} plages → ${litanies.map((_, i) => '41000' + String.fromCharCode(97 + i)).join(', ')}`)
 
 if (args.convert) {
   const jobs = [...found.entries()]

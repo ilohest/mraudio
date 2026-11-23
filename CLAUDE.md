@@ -158,8 +158,36 @@ Ils ne sont lus qu'au chargement : changer le hash à la main ne rafraîchit pas
 ## Audios
 Nommage : `LLVVV` = livre (2 chiffres) + verset (3 chiffres). Verset 000 = épigraphes.
 - CA : dossier plat « EL MISSATGE RETROBAT EN AUDIO » (2 837 fichiers, 1,2 Go, formats mélangés).
-- ES : dossier « AUDIOS MR » avec un sous-dossier par livre, même nommage. **Pas encore reçu.**
+- ES : dossier `~/Downloads/Audios MR 2`, un sous-dossier par livre, **autre nommage** (voir plus bas).
+  2 810 fichiers, 1,9 Go → 2 807 pistes au manifeste.
 - FR : à traiter plus tard.
+
+Particularités (ES), relevées le 23/11/2026 sur `~/Downloads/Audios MR 2` (2 810 mp3, 1,9 Go) :
+- **Le nommage n'est pas celui du catalan** : 2 787 fichiers sur 4 chiffres, `0765` = livre 7
+  verset 65, le verset n'étant pas rempli à trois chiffres. Au-delà de 99 il en prend trois
+  (`03100`, `36100`–`36109`), ce qui retombe par chance sur la forme catalane. Un sous-dossier
+  par livre, `LIBRO I` … `LIBRO XXXVIII`, `LIBRO XXXIX`, et **`LIBRO XXXX` pour le quarantième**.
+  `scripts/audio.mjs` recoupe le livre lu dans le nom avec celui du dossier et refuse les
+  désaccords ; il n'y en a aucun.
+- Les **litanies sont découpées en quatre plages** (`Letanias 1-48`, `Letanías 49-65`,
+  `Letanías 66-105`, `Letanías 106-144`) là où le catalan tient en une piste → `41000a`…`41000d`,
+  dans l'ordre des plages. Les bornes sont dans `LITANY_RANGES` (`src/lib/labels.ts`) : elles
+  viennent des noms de fichiers et ne survivent nulle part ailleurs, le manifeste ne gardant
+  que les identifiants.
+- Un seul **préliminaire**, `Oraciones del Padre y de la Madre.mp3`, à la racine → `00000b`.
+  Le catalan en a trois (Pare Daurat, Mare Brilant, La llum) ; l'espagnol n'a donc ni la
+  séparation père / mère ni « La llum ». 83,6 s contre 61,2 + 50,0 s en catalan : ce n'est pas
+  la simple somme des deux, **à vérifier avec la cliente** (manque-t-il des fichiers ?).
+- **Trois versets manquent** par rapport au catalan : livre 3 verset 78, livre 12 verset 79,
+  livre 37 verset 70. Inversement le livre 38 a des épigraphes en espagnol, pas en catalan, et
+  `04000T` n'existe qu'en catalan.
+- **`0333(1)` et `0344(1)` ne sont pas des doublons** : leurs vingt premières secondes diffèrent,
+  ce sont de vraies seconde prises (40,7 s contre 42,6 · 30,8 contre 31,7). `1507(1)`, lui, est
+  bien identique. Le script garde le fichier de base dans les trois cas — **la cliente doit
+  écouter les deux premières paires et dire laquelle garder**.
+- Piège macOS : les accents sont stockés en forme décomposée, donc « Letanías » lu sur le disque
+  ne ressemble pas à « Letanías » écrit dans le script. Les noms sont normalisés en NFC avant
+  toute comparaison, sans quoi le dossier des litanies passait à la trappe en silence.
 
 Particularités (CA) :
 - `28004(1).ogg`, `31014(2).ogg`… = copies identiques (même MD5) → ignorées.
@@ -209,8 +237,11 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   lors d'une tâche précédente : sans rapport avec cette app, peut être supprimé.
 
 ## À faire
-- Traiter les audios ES : dossier reçu, `~/Downloads/Audios MR 2` (42 sous-dossiers « LIBRO I » … ).
-- Puis le français.
+- Le français, quand les audios arriveront.
+- Faire écouter à la cliente les paires `0333` / `0333(1)` et `0344` / `0344(1)` du livre III
+  espagnol : ce sont deux prises différentes, c'est à elle de choisir.
+- Lui signaler les trois versets espagnols manquants (3/78, 12/79, 37/70) et l'unique
+  préliminaire espagnol, au cas où des fichiers manqueraient.
 - Confirmer `04000T` (la cliente doit l'écouter) ; récupérer les noms ES / FR du livre 0.
 - Faire confirmer l'orthographe de « Adrés Molero » dans les crédits ES (« Andrés » ?), et la
   formulation « Disseny i desenvolupament » pour la signature d'Isaure.

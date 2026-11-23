@@ -11,6 +11,17 @@ type Messages = (typeof tRef)['value']
  */
 const PRELIM_NAMES: Partial<Record<Lang, Record<string, string>>> = {
   ca: { '00000b': 'Pare Daurat', '00000c': 'Mare Brilant', '00000d': 'La llum' },
+  // L'espagnol n'a qu'une piste préliminaire, qui porte son titre en toutes lettres.
+  es: { '00000b': 'Oraciones del Padre y de la Madre' },
+}
+
+/**
+ * Litanies : le catalan tient en une seule piste, l'espagnol est découpé en quatre plages de
+ * versets. Les bornes viennent des noms de fichiers reçus et n'existent nulle part ailleurs —
+ * le manifeste ne garde que les identifiants.
+ */
+const LITANY_RANGES: Partial<Record<Lang, Record<string, string>>> = {
+  es: { '41000a': '1 – 48', '41000b': '49 – 65', '41000c': '66 – 105', '41000d': '106 – 144' },
 }
 
 /** Grand repère (« XXIII »), son étiquette (« Llibre ») et la ligne du verset. */
@@ -22,7 +33,9 @@ export function labelFor(tr: Track, t: Messages) {
     return { kicker: t.work, big: t.preliminary, numeral: false, verseLabel: t.part, verse: String(n) }
   }
   if (tr.book === LITANIES_BOOK) {
-    return { kicker: t.work, big: t.litanies, numeral: false, verseLabel: '', verse: '' }
+    const range = LITANY_RANGES[lang.value]?.[tr.id]
+    const big = range ? `${t.litanies} ${range}` : t.litanies
+    return { kicker: t.work, big, numeral: false, verseLabel: '', verse: '' }
   }
   if (tr.verse === 0) {
     return { kicker: t.book, big: toRoman(tr.book), numeral: true, verseLabel: '', verse: t.epigraphs }
