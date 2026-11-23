@@ -6,10 +6,10 @@
  *
  *   node scripts/deploy.mjs [--audio <dossier _web>] [--out deploy]
  *
- * Sans --audio, le dossier est déduit du lien symbolique public/audio/ca utilisé en
- * développement, pour n'avoir le chemin écrit qu'à un seul endroit.
+ * Sans --audio : le dossier `audio-web` du projet, sinon celui que désigne le lien
+ * symbolique public/audio/ca utilisé en développement.
  */
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readlinkSync, rmSync, statSync } from 'node:fs'
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -24,9 +24,12 @@ const args = Object.fromEntries(
 
 function audioRoot() {
   if (args.audio) return resolve(args.audio)
+  const local = join(root, 'audio-web')
+  if (existsSync(local)) return local
+  // Repli : le lien de développement, que son chemin soit relatif ou absolu.
   const lien = join(root, 'public', 'audio', 'ca')
-  if (existsSync(lien) && lstatSync(lien).isSymbolicLink()) return dirname(resolve(readlinkSync(lien)))
-  console.error('Impossible de deviner le dossier des audios : passe --audio <dossier _web>.')
+  if (existsSync(lien) && lstatSync(lien).isSymbolicLink()) return dirname(realpathSync(lien))
+  console.error('Dossier des audios introuvable : passe --audio <dossier>.')
   process.exit(1)
 }
 

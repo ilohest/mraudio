@@ -246,8 +246,8 @@ Particularités (CA) :
 
 Commandes :
 ```
-npm run audio -- --lang ca --src "/Users/isaurelohest/Downloads/EL MISSATGE RETROBAT EN AUDIO" --out ./audio-web --convert
-npm run audio -- --lang es --src "/chemin/AUDIOS MR" --out ./audio-web --convert
+npm run audio -- --lang ca --src "~/Downloads/EL MISSATGE RETROBAT EN AUDIO" --out ./audio-web --convert
+npm run audio -- --lang es --src "~/Downloads/Audios MR 2" --out ./audio-web --convert
 ```
 Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seulement le manifeste.
 
@@ -256,8 +256,8 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   « EL MISSATGE RETROBAT EN AUDIO/Claude outputs/oracle-missatge-retrobat.zip »). Dépôt git local,
   pas de remote : `bc9b8dd` l'ivoire d'origine, `1287a0c` le brutalisme, puis le design « spécimen ».
 - **Conversion CA terminée** : 2 809 pistes (2 810 moins `00000a`), 803 Mo dans
-  `EL MISSATGE RETROBAT EN AUDIO/_web/ca`. Les 2 809 fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
-- **Conversion ES terminée** (23/11/2026) : 2 807 pistes, 706 Mo dans `…/_web/es`, aucun échec.
+  `audio-web/ca`. Les 2 809 fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
+- **Conversion ES terminée** (23/11/2026) : 2 807 pistes, 706 Mo dans `audio-web/es`, aucun échec.
   Contrôle complet et non pas par sondage : le manifeste a été recoupé avec une dérivation
   indépendante des identifiants, puis **chaque piste comparée à sa source** — toutes existent,
   sont en AAC mono, et leur durée correspond à moins d'une demi-seconde près. Zéro anomalie.
@@ -274,13 +274,17 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   Écoute suivie vérifiée bout en bout : le verset 50 enchaîne bien sur le 51 et le réglage
   survit au rechargement. Build : **216 Ko, 5 fichiers**.
 - **Pas encore vérifié sur Safari**, aucun des trois designs.
-- Pour le test local, `public/audio/ca` et `public/audio/es` sont des **liens symboliques** vers
-  `…/_web/ca` et `…/_web/es` (évite de dupliquer 1,5 Go). `public/audio` est dans `.gitignore`.
+- Les audios convertis vivent dans **`audio-web/`, à la racine du projet** (ignoré par git).
+  Ils étaient dans `~/Downloads/EL MISSATGE RETROBAT EN AUDIO/_web`, c'est-à-dire **à l'intérieur
+  du dossier des sources** : vider Downloads aurait emporté l'audio du site. Déplacés le
+  23/11/2026. `public/audio/ca` et `public/audio/es` sont des liens symboliques relatifs vers
+  `audio-web/`, pour le serveur de développement ; `public/audio` est dans `.gitignore`.
   `vite.config.ts` met `publicDir: false` au build : les audios ne peuvent plus se retrouver
   dans `dist/` par accident, ce qui est arrivé une fois et coûtait 800 Mo de copie.
-- **Disque du Mac serré** : 3,6 Gio libres sur 228 après la conversion espagnole. Les deux sources
-  d'origine (1,2 Go en catalan, 1,9 Go en espagnol) ne sont plus nécessaires une fois les dossiers
-  `_web` en ligne — c'est là qu'il faudra récupérer de la place avant le français.
+- **Disque du Mac serré** : 3,3 Gio libres sur 228. Les caches régénérables ont été vidés
+  (0,9 Go). Restent, à la main de la cliente : les sources catalanes (1,19 Go) et espagnoles
+  (1,9 Go) dans Downloads — ce sont les masters, et deux questions en dépendent encore
+  (`04000T`, et le choix entre les deux prises de `0333` / `0344`).
 - Sur le serveur Hostinger, `wp-content/uploads/audios/` (FR/CAT/ES, ~3 Go de MP3 de livres entiers) a été créé
   lors d'une tâche précédente : sans rapport avec cette app, peut être supprimé.
 
@@ -297,16 +301,15 @@ npx wrangler deploy      # envoie deploy/ (ou : npm run deploy, qui enchaîne le
 ```
 
 `scripts/deploy.mjs` ajoute les audios en **liens durs** (`cp -al`) : 1,5 Go apparents pour zéro
-octet consommé, ce qui compte — il reste 2,4 Gio sur le disque. Le dossier des audios est déduit
-du lien symbolique `public/audio/ca`, pour que le chemin ne soit écrit qu'à un seul endroit.
+octet consommé, ce qui compte sur un disque serré. Il les prend dans `audio-web/`.
 
 Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même domaine : pas de
 R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
 les sortir ailleurs.
 
-**Point bloquant au 23/11/2026** : `wrangler whoami` est bien connecté à isaure.lohest@gmail.com
-mais le seul compte atteint est « Hello@audegastauer.com's Account », celui d'une cliente. Isaure
-veut son compte personnel. Rien n'a été déployé.
+Le compte à utiliser est le compte **personnel** d'Isaure. Si `npx wrangler whoami` en affiche un
+autre — elle est membre de comptes de clientes — il faut refaire `npx wrangler login` et n'autoriser
+que le sien : rien ne doit partir sur le compte d'un tiers.
 
 ## Ce qui n'a pas été vérifié
 

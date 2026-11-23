@@ -1,4 +1,30 @@
-# Logs
+# Dépendances
+node_modules
+
+# Sorties de build
+dist
+dist-ssr
+dist-single
+deploy
+*.tsbuildinfo
+
+# Audios : 1,5 Go convertis, hébergés à part et assemblés par scripts/deploy.mjs.
+# public/audio ne contient que des liens symboliques vers eux, pour le serveur de dev.
+audio-web
+public/audio
+
+# Outils
+.wrangler
+.vite
+coverage
+
+# Réglages locaux et secrets (.env.example est suivi, lui : c'est le gabarit)
+.env
+.env.*
+!.env.example
+*.local
+
+# Journaux
 logs
 *.log
 npm-debug.log*
@@ -7,25 +33,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Réglages d'outils propres à une machine
+.claude/settings.local.json
 
-# Editor directories and files
+# Système et éditeurs
+.DS_Store
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# audios convertis (hébergés à part)
-audio-web
-public/audio
-dist-single
-
-deploy/
