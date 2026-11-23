@@ -45,12 +45,14 @@ formulaire ; dès qu'un verset est ouvert, le rail, les commandes et l'écoute s
 dessous. Il n'y a plus de composant `VersePicker` — il faisait doublon avec le repère.
 - Un grand chiffre ne dit pas « je suis un champ » : le **filet sous le nombre** et la ligne
   d'indication en dessous sont ce qui le fait lire comme un formulaire. Ne pas les retirer.
-- Le bouton « Escoltar » n'apparaît que si la saisie ne décrit plus ce qui joue (`dirty`), ou si
-  rien ne joue. Il se déplie par `grid-template-rows: 0fr → 1fr`.
-- **Quand il se déplie alors qu'un verset joue**, la carte est déjà pleine : le repère doit céder
-  la place (classe `editing` sur `.now`, qui réduit sa taille et ses marges). Sans ça le repère
-  est comprimé sous sa propre hauteur, son contenu déborde de sa case et le bouton se dessine
-  par-dessus les chiffres — le bug signalé le 23/11/2026.
+- **« Escoltar » et « Reproduir » ne font qu'un bouton.** Tant qu'un verset joue, le bouton
+  principal des commandes devient « Escoltar » dès que la saisie ne décrit plus ce qui joue
+  (`dirty`), puis redevient « Reproduir / Pausa ». Le bouton séparé ne subsiste que lorsque rien
+  ne joue, là où il n'y a pas encore de commandes. Deux raisons, dans cet ordre : deux gros
+  boutons empilés promettaient tous deux du son, ce qui trompe ; et un bloc qui se déplie dans
+  une carte déjà pleine comprimait le repère sous sa propre hauteur, dont le contenu débordait
+  alors de sa case et passait sous le bouton. Ne pas réintroduire de bloc dépliant ici sans
+  rendre au repère la hauteur correspondante.
 - Les préliminaires, les litanies et les épigraphes n'ont pas de numéro : leur nom s'affiche
   au-dessus des champs, laissés vides.
 

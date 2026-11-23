@@ -140,14 +140,12 @@ const dirty = computed(() => {
   if (!tr || !label.value?.numeral) return !!bookInput.value.trim() || !!raw
   return book.value !== tr.book || (raw === '' ? 0 : parseInt(raw, 10)) !== tr.verse
 })
-const asking = computed(() => !props.track || dirty.value)
 /**
- * Saisie en cours pendant qu'un verset joue : le bouton « Escoltar » se déplie alors que la
- * carte est déjà pleine. Sans rien céder, le repère serait comprimé sous sa propre hauteur et
- * le bouton se dessinerait par-dessus les chiffres. On rend donc la place en réduisant le
- * repère — ce qui tombe bien : à cet instant, c'est l'action qui compte, pas le repère.
+ * « Escoltar » et « Reproduir » promettaient tous deux du son : ils n'en font plus qu'un.
+ * Tant qu'un verset joue, c'est le bouton principal des commandes qui devient « Escoltar »
+ * dès que la saisie ne le décrit plus. Le bouton séparé ne subsiste que lorsque rien ne joue,
+ * là où il n'y a pas encore de commandes.
  */
-const editing = computed(() => !!props.track && dirty.value)
 
 /** Collage « VII 56 », « 7,56 », « 07056 » dans le champ livre → répartit les deux champs. */
 function splitCombined() {
@@ -248,7 +246,7 @@ const chainOpts = computed(() => [
 </script>
 
 <template>
-  <article class="now" :class="{ editing }">
+  <article class="now">
     <p v-if="standing" class="standing">
       <span v-if="standing.kicker" class="micro">{{ standing.kicker }}</span>
       <span class="name">{{ standing.name }}</span>
@@ -321,14 +319,10 @@ const chainOpts = computed(() => [
       </label>
     </div>
 
-    <div class="reveal" :class="{ open: asking }">
-      <div>
-        <button class="go" type="button" @click="submit">
-          <span>{{ t.listen }}</span>
-          <Icon name="arrow" />
-        </button>
-      </div>
-    </div>
+    <button v-if="!track" class="go" type="button" @click="submit">
+      <span>{{ t.listen }}</span>
+      <Icon name="arrow" />
+    </button>
 
     <p v-if="message" class="msg" role="status" aria-live="polite">{{ message }}</p>
 
@@ -365,9 +359,16 @@ const chainOpts = computed(() => [
       </p>
 
       <nav class="controls">
-        <button type="button" class="primary" :class="{ pulse }" :disabled="error" @click="onToggle">
-          <Icon :name="playing ? 'pause' : 'play'" />
-          <span>{{ playing ? t.pause : t.play }}</span>
+        <button
+          type="button"
+          class="primary"
+          :class="{ pulse }"
+          :disabled="!dirty && error"
+          @click="dirty ? submit() : onToggle()"
+        >
+          <Icon v-if="!dirty" :name="playing ? 'pause' : 'play'" />
+          <span>{{ dirty ? t.listen : playing ? t.pause : t.play }}</span>
+          <Icon v-if="dirty" name="arrow" />
         </button>
         <button type="button" :disabled="!hasPrev" :aria-label="t.prev" :title="t.prev" @click="emit('prev')">
           <Icon name="prev" /><span>{{ t.prev }}</span>
@@ -513,29 +514,13 @@ const chainOpts = computed(() => [
 .mega.len-l { font-size: clamp(1.9rem, min(11.5cqi, 22cqh), 6.4rem); }
 .mega.len-xl { font-size: clamp(1.5rem, min(9cqi, 17.5cqh), 5rem); }
 
-/* Pendant la saisie, le repère cède la place au bouton. */
-.now.editing .slot {
-  padding-top: calc(var(--pad) * 0.5);
-  padding-bottom: calc(var(--pad) * 0.5);
-}
-.now.editing .mega { font-size: clamp(1.9rem, min(12cqi, 17cqh), 5.5rem); }
-.now.editing .mega.len-l { font-size: clamp(1.7rem, min(10cqi, 14cqh), 4.6rem); }
-.now.editing .mega.len-xl { font-size: clamp(1.4rem, min(8cqi, 11cqh), 3.8rem); }
 .mega.accent { color: var(--rubric); }
 .mega[aria-invalid='true'] { color: var(--rubric-deep); }
 .hint { font-size: 0.8rem; }
 .hint.bad { color: var(--rubric-deep); }
 
-/* Le bouton se déplie au lieu d'apparaître d'un coup. */
-.reveal {
-  flex: none;
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.3, 1);
-}
-.reveal.open { grid-template-rows: 1fr; }
-.reveal > div { overflow: hidden; }
 .go {
+  flex: none;
   appearance: none;
   width: calc(100% - 2 * var(--pad));
   margin: 0 var(--pad) var(--pad);
