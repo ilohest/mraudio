@@ -47,7 +47,7 @@
   <body>
     <div class="texte">
       <p class="auteur">Louis Cattiaux</p>
-      <p class="titre">Le Message Retrouvé</p>
+      <p class="titre" id="titre">Le Message Retrouvé</p>
     </div>
 
     <!-- La même oreille que l'icône du site. -->
@@ -56,5 +56,13 @@
       <path d="M9.5 13.5a6.8 6.8 0 1 1 13.6 0c0 5.6-5.6 6-5.6 9.9a3.5 3.5 0 1 1-7 0" />
       <path d="M19.6 13.5a3 3 0 0 0-6 0v1.4a2.4 2.4 0 1 1 0 4.8" />
     </svg>
+
+    <!-- Le titre vient du fragment, pour que le même gabarit serve les trois langues :
+         scripts/images.mjs ouvre le fichier avec #El%20Missatge%20Retrobat, etc. Ouvert seul,
+         il montre le titre français — l'aperçu de la racine. -->
+    <script>
+      const titre = decodeURIComponent(location.hash.slice(1))
+      if (titre) document.getElementById('titre').textContent = titre
+    </script>
   </body>
 </html>

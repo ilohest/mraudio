@@ -141,7 +141,37 @@ const messages = {
   },
 } as const
 
+/**
+ * L'adresse a deux formes, et c'est voulu.
+ *
+ * La langue vit désormais dans le **chemin** : `/fr`, `/fr#7/56`. Un fragment n'est jamais
+ * envoyé au serveur — WhatsApp, Signal, Slack et les autres ne demandent que `mraudio.app/`
+ * et ne voient donc pas `#fr`. Tant que la langue était dans le fragment, l'aperçu d'un lien
+ * partagé ne pouvait pas être dans la langue partagée : c'est la même page pour tout le monde.
+ *
+ * L'ancienne forme (`#fr/7/56`) reste **lue**, parce que des liens ont déjà circulé ; elle ne
+ * s'écrit plus. Le premier affichage réécrit l'adresse dans la forme actuelle.
+ */
+function langFromPath(): Lang | null {
+  const seg = location.pathname.replace(/^\/+|\/+$/g, '')
+  return (LANGS as string[]).includes(seg) ? (seg as Lang) : null
+}
+
+/** Le verset demandé par l'adresse, quelle que soit sa forme : [livre, verset]. */
+export function verseFromUrl(): [string | undefined, string | undefined] {
+  const parts = location.hash.replace('#', '').split('/').filter(Boolean)
+  if ((LANGS as string[]).includes(parts[0])) parts.shift()
+  return [parts[0], parts[1]]
+}
+
+/** L'adresse à écrire : la langue dans le chemin, le verset dans le fragment. */
+export function urlFor(l: Lang, verse?: string) {
+  return `/${l}${verse ? `#${verse}` : ''}`
+}
+
 function initialLang(): Lang {
+  const fromPath = langFromPath()
+  if (fromPath) return fromPath
   const fromHash = location.hash.replace('#', '').split('/')[0]
   if ((LANGS as string[]).includes(fromHash)) return fromHash as Lang
   try {

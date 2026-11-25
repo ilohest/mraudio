@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import LangSwitch from './components/LangSwitch.vue'
 import DrawBar from './components/DrawBar.vue'
 import NowPlaying from './components/NowPlaying.vue'
-import { lang, t } from './lib/i18n'
+import { lang, t, urlFor, verseFromUrl } from './lib/i18n'
 import { getCatalog, type Track } from './lib/catalog'
 import { shortLabel } from './lib/labels'
 import { usePlayer, type Chain } from './composables/usePlayer'
@@ -20,7 +20,7 @@ function open(tr: Track, opts: { drawn?: boolean; autoplay?: boolean } = {}) {
   if (!catalog.value) return
   drawn.value = !!opts.drawn
   player.load(tr, catalog.value.url(tr), opts.autoplay ?? true)
-  history.replaceState(null, '', `#${lang.value}/${tr.book}/${tr.verse}${tr.part}`)
+  history.replaceState(null, '', urlFor(lang.value, `${tr.book}/${tr.verse}${tr.part}`))
   /* On ne ramène la carte à l'écran que si elle en est entièrement sortie. La version
      précédente la recentrait dès qu'elle dépassait du bas : sur téléphone, où la carte est
      plus haute que l'écran, chaque tirage faisait défiler la page sous les doigts. */
@@ -67,7 +67,7 @@ watch(lang, () => {
   if (same) open(same, { autoplay: false })
   else {
     player.stop()
-    history.replaceState(null, '', `#${lang.value}`)
+    history.replaceState(null, '', urlFor(lang.value))
   }
 })
 
@@ -115,15 +115,22 @@ onMounted(() => {
   ms.setActionHandler('nexttrack', () => hasNext.value && step(1))
 })
 
-/* Lien direct : #ca/7/56 · #ca/0/0b · #ca/41/0 */
+/*
+ * Lien direct : /ca#7/56 · /ca#0/0b · /ca#41/0 — et les anciennes adresses #ca/7/56, qui ont
+ * circulé avant que la langue ne passe dans le chemin.
+ *
+ * Faute de verset à ouvrir, on réécrit quand même l'adresse : ainsi la barre du navigateur, et
+ * donc le lien que copie le bouton de partage, portent toujours la langue affichée. Sans ça,
+ * qui arrive sur `mraudio.app` tout court partagerait une adresse sans langue, dont l'aperçu
+ * ne peut être que trilingue.
+ */
 onMounted(() => {
-  const [, b, v] = location.hash.replace('#', '').split('/')
-  if (!b || !catalog.value) return
-  const m = (v ?? '0').match(/^(\d+)([a-z]?)$/)
-  if (!m) return
-  const id = String(parseInt(b, 10)).padStart(2, '0') + m[1].padStart(3, '0') + m[2]
-  const tr = catalog.value.tracks.find((x) => x.id === id)
+  const [b, v] = verseFromUrl()
+  const m = b && catalog.value ? (v ?? '0').match(/^(\d+)([a-z]?)$/) : null
+  const id = m && String(parseInt(b!, 10)).padStart(2, '0') + m[1].padStart(3, '0') + m[2]
+  const tr = id ? catalog.value!.tracks.find((x) => x.id === id) : null
   if (tr) open(tr, { autoplay: false })
+  else history.replaceState(null, '', urlFor(lang.value))
 })
 
 /* Raccourcis clavier, annoncés en pied de page. */

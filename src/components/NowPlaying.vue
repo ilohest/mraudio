@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { t } from '../lib/i18n'
 import { labelFor } from '../lib/labels'
 import { parseBook, toRoman } from '../lib/roman'
-import { FIRST_BOOK, LAST_BOOK, type Catalog, type Track } from '../lib/catalog'
+import { FIRST_BOOK, LAST_BOOK, LITANIES_BOOK, type Catalog, type Track } from '../lib/catalog'
 import { formatTime, usePlayer, type Chain } from '../composables/usePlayer'
 import Icon from './Icon.vue'
 import Reel from './Reel.vue'
@@ -28,10 +28,20 @@ const label = computed(() => (props.track ? labelFor(props.track, t.value) : nul
  */
 const standing = computed(() => {
   if (!props.track) return { kicker: '', name: t.value.chooseTitle }
+  if (litanyInBook.value) return null
   const l = label.value!
   if (!l.numeral) return { kicker: l.kicker, name: l.big }
   return null
 })
+
+/**
+ * Les litanies tiennent en une seule piste en catalan et en français : elles n'ont alors ni
+ * numéro de livre ni numéro de verset, et leur nom prend la place du chiffre romain — la case
+ * du verset reste vide. L'espagnol les découpe en quatre plages, qu'il faut bien distinguer :
+ * là, le nom reste au-dessus des cases et chaque plage garde ses bornes.
+ */
+const litanyAlone = computed(() => props.catalog.tracks.filter((x) => x.book === LITANIES_BOOK).length === 1)
+const litanyInBook = computed(() => props.track?.book === LITANIES_BOOK && litanyAlone.value)
 
 /** Sans accents ni casse : « Epigrafes » doit valoir « Epígrafes ». */
 const plain = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
@@ -61,6 +71,11 @@ const verseEl = ref<HTMLInputElement | null>(null)
 
 function syncFromTrack() {
   const tr = props.track
+  if (litanyInBook.value) {
+    bookInput.value = t.value.litanies
+    verseInput.value = ''
+    return
+  }
   if (!tr || !label.value?.numeral) {
     bookInput.value = ''
     verseInput.value = ''
@@ -128,11 +143,25 @@ watch(
 )
 onBeforeUnmount(() => clearTimeout(timer))
 
-const book = computed(() => parseBook(bookInput.value))
+/** Le nom des litanies vaut leur numéro de livre, comme « Épigraphes » vaut le verset 0 :
+ *  la case montre le mot, le mot doit donc pouvoir se taper. */
+function readBook(raw: string): number | null {
+  const s = raw.trim()
+  if (litanyAlone.value && s && plain(s) === plain(t.value.litanies)) return LITANIES_BOOK
+  return parseBook(s)
+}
+const book = computed(() => readBook(bookInput.value))
+/** Une case qui écrit un mot plutôt qu'un nombre : autre échelle, et pas d'indication. */
+const bookIsWord = computed(() => {
+  const s = bookInput.value.trim()
+  return !!s && !/^[\divxlcdm]+$/i.test(s)
+})
 const range = computed(() => (book.value !== null ? props.catalog.range(book.value) : null))
-const bookOk = computed(
-  () => book.value !== null && book.value >= FIRST_BOOK && book.value <= LAST_BOOK && !!range.value,
-)
+const bookOk = computed(() => {
+  const b = book.value
+  if (b === null || !range.value) return false
+  return b === LITANIES_BOOK ? litanyAlone.value : b >= FIRST_BOOK && b <= LAST_BOOK
+})
 /**
  * XXXVIII est trois fois plus long que VII : la taille suit le nombre de signes, sinon le
  * chiffre romain se casse en deux lignes. Elle vaut pour **les deux cases** — c'est le
@@ -140,6 +169,7 @@ const bookOk = computed(
  * les filets de champ et les lignes d'indication ne seraient plus à la même hauteur.
  */
 const heroSize = computed(() => {
+  if (bookIsWord.value) return ''
   const n = bookInput.value.trim().length
   return n >= 6 ? 'len-xl' : n >= 4 ? 'len-l' : ''
 })
@@ -152,7 +182,7 @@ const heroSize = computed(() => {
 const bookHint = computed(() => {
   if (rolling.value) return ''
   const raw = bookInput.value.trim()
-  if (!raw) return ''
+  if (!raw || bookIsWord.value) return ''
   if (!bookOk.value) return '—'
   const roman = toRoman(book.value!)
   return raw.toUpperCase() === roman ? '' : roman
@@ -164,7 +194,12 @@ const bookHint = computed(() => {
  * d'indication, en gris et en petit, personne ne le voyait. Il réagit à la saisie, pas
  * seulement à ce qui joue : taper le dernier numéro suffit à l'annoncer.
  */
-const verseHint = computed(() => (rolling.value || !range.value ? '' : `${range.value[0]} – ${range.value[1]}`))
+// Une plage « 0 – 0 » ne dit rien : les litanies n'ont pas de versets à parcourir.
+const verseHint = computed(() =>
+  rolling.value || !range.value || book.value === LITANIES_BOOK
+    ? ''
+    : `${range.value[0]} – ${range.value[1]}`,
+)
 
 /* Le bouton n'apparaît que si la saisie ne décrit plus ce qui joue : il enseigne
    l'interaction au moment où on la découvre, sans encombrer le reste du temps. */
@@ -172,6 +207,8 @@ const dirty = computed(() => {
   if (rolling.value) return false
   const tr = props.track
   const raw = verseInput.value.trim()
+  // Le nom des litanies occupe la case du livre : il décrit ce qui joue, il ne la salit pas.
+  if (litanyInBook.value) return book.value !== LITANIES_BOOK || raw !== ''
   if (!tr || !label.value?.numeral) return !!bookInput.value.trim() || !!raw
   return book.value !== tr.book || readVerse(raw) !== tr.verse
 })
@@ -203,6 +240,9 @@ function onBookKey(e: KeyboardEvent) {
 }
 function onBookInput() {
   message.value = ''
+  // Les litanies n'ont pas de verset : la case d'en face n'a plus rien à dire, et un numéro
+  // resté là ferait échouer la validation sur une plage « 0 – 0 » incompréhensible.
+  if (readBook(bookInput.value) === LITANIES_BOOK) verseInput.value = ''
   if (splitCombined()) verseEl.value?.focus()
 }
 
@@ -326,12 +366,13 @@ const chainOpts = computed(() => [
             v-else
             v-model="bookInput"
             class="mega"
+            :class="{ word: bookIsWord }"
             type="text"
             inputmode="text"
             autocomplete="off"
             autocapitalize="characters"
             spellcheck="false"
-            maxlength="9"
+            maxlength="16"
             placeholder="VII"
             :aria-label="t.book"
             :aria-invalid="!!bookInput.trim() && !bookOk"
@@ -367,7 +408,7 @@ const chainOpts = computed(() => [
             pattern="[0-9]*"
             autocomplete="off"
             maxlength="16"
-            placeholder="56"
+            :placeholder="litanyInBook ? '' : '56'"
             :aria-label="t.verse"
             @input="message = ''"
             @keydown.enter.prevent="submit"

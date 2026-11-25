@@ -25,7 +25,7 @@ if (!existsSync(CHROME)) {
 
 const tmp = mkdtempSync(join(tmpdir(), 'images-'))
 
-function rendre(gabarit, largeur, hauteur, sortie) {
+function rendre(gabarit, largeur, hauteur, sortie, fragment = '') {
   const shot = join(tmp, `${sortie}.png`)
   const r = spawnSync(CHROME, [
     '--headless=new',
@@ -35,7 +35,7 @@ function rendre(gabarit, largeur, hauteur, sortie) {
     `--window-size=${largeur},${hauteur}`,
     '--virtual-time-budget=4000',
     `--screenshot=${shot}`,
-    `file://${join(root, 'src', gabarit)}`,
+    `file://${join(root, 'src', gabarit)}${fragment ? '#' + encodeURIComponent(fragment) : ''}`,
   ], { stdio: ['ignore', 'ignore', 'inherit'] })
   if (r.status !== 0 || !existsSync(shot)) {
     console.error(`Le rendu de ${gabarit} a échoué.`)
@@ -48,7 +48,15 @@ function rendre(gabarit, largeur, hauteur, sortie) {
   return dest
 }
 
-rendre('og.template.html', 1200, 630, 'og')
+/*
+ * Une image d'aperçu par langue : le titre de l'œuvre y est écrit en toutes lettres, il ne
+ * peut donc pas être le même pour les trois. La racine garde l'image française, qui est celle
+ * du titre sous lequel l'œuvre est le plus souvent citée.
+ */
+const TITRES = { ca: 'El Missatge Retrobat', es: 'El Mensaje Reencontrado', fr: 'Le Message Retrouvé' }
+for (const [l, titre] of Object.entries(TITRES)) rendre('og.template.html', 1200, 630, `og-${l}`, titre)
+copyFileSync(join(root, 'src', 'assets', 'og-fr.png'), join(root, 'src', 'assets', 'og.png'))
+console.log('✓ og.png — copie de la française, pour la racine')
 const carre = rendre('mr.template.html', 512, 512, 'mr-512')
 
 // Les systèmes choisissent la taille la plus proche : on leur en donne trois.

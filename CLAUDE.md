@@ -53,8 +53,15 @@ dessous. Il n'y a plus de composant `VersePicker` — il faisait doublon avec le
   une carte déjà pleine comprimait le repère sous sa propre hauteur, dont le contenu débordait
   alors de sa case et passait sous le bouton. Ne pas réintroduire de bloc dépliant ici sans
   rendre au repère la hauteur correspondante.
-- Les préliminaires et les litanies n'ont pas de numéro : leur nom s'affiche au-dessus des
-  champs, laissés vides.
+- Les préliminaires n'ont pas de numéro : leur nom s'affiche au-dessus des champs, laissés vides.
+- **Les litanies, elles, s'écrivent dans la case du livre** (demandé par Isaure le 25/11/2026),
+  la case du verset restant vide — gabarit compris, sans quoi le « 56 » en gris se lit comme un
+  numéro à côté du mot. Et puisque le mot est écrit là, il se **tape** : « Litanies » dans la
+  case du livre les ouvre, comme « Épigraphes » ouvre le verset 0. Taper le mot vide la case du
+  verset, faute de quoi la validation échouerait sur une plage « 0 – 0 » incompréhensible.
+  Cela ne vaut que là où les litanies tiennent en **une seule piste** (catalan, français) :
+  l'espagnol les découpe en quatre plages de versets, qu'il faut distinguer, et qui gardent donc
+  leur nom au-dessus des cases (`litanyAlone` dans `NowPlaying.vue`).
 - **Structure d'un livre** (indiquée par Isaure le 23/11/2026) : le verset 0 en est l'épigraphe
   et le dernier verset l'hypographe. L'épigraphe s'écrit **en toutes lettres à la place du
   numéro** — « 0 » ne dit rien à personne — tandis que l'hypographe **garde son numéro**, qui
@@ -205,8 +212,15 @@ Retirés à la demande d'Isaure, ne pas remettre sans elle :
 - `scripts/audio.mjs` — génère le manifeste et convertit les audios (ffmpeg).
 - `scripts/screens.py` — captures Playwright de vérification (serveur sur :4173).
 
-Liens directs : `#ca/7/56`, `#ca/0/0b` (Pare Daurat), `#ca/41/0` (litanies).
-Ils ne sont lus qu'au chargement : changer le hash à la main ne rafraîchit pas l'affichage, il faut recharger.
+**L'adresse : la langue dans le chemin, le verset dans le fragment** — `/fr`, `/ca#7/56`,
+`/ca#0/0b` (Pare Daurat), `/ca#41/0` (litanies). Elle a changé le 25/11/2026, pour une raison
+qui ne se devine pas : **un fragment n'est jamais envoyé au serveur.** Partager `mraudio.app/#fr`
+revient, pour WhatsApp ou Signal, à partager `mraudio.app/` : l'aperçu ne pouvait donc pas être
+dans la langue partagée. L'ancienne forme (`#fr/7/56`) reste **lue** — des liens ont circulé —
+mais ne s'écrit plus : le premier affichage réécrit l'adresse, même quand rien ne joue, pour que
+le bouton de partage copie toujours une adresse qui porte sa langue.
+Les adresses ne sont lues qu'au chargement : changer le fragment à la main ne rafraîchit pas
+l'affichage, il faut recharger.
 
 ## Audios
 Nommage : `LLVVV` = livre (2 chiffres) + verset (3 chiffres). Verset 000 = épigraphes.
@@ -254,12 +268,13 @@ Particularités (FR), relevées le 25/11/2026 sur le disque externe JC :
   filtre d'extensions. Sources en mp3 mono 96 kbps 44,1 kHz.
 - **Pas de préliminaires** : il n'y a pas de livre 0 en français. Les trois pistes catalanes
   (Pare Daurat, Mare Brilant, La llum) et l'unique piste espagnole n'ont pas d'équivalent.
-- **Les litanies sont en quatre fichiers**, numérotés comme des versets et non comme des
-  sous-parties : `41000` ne fait que **4,1 s** — c'est une annonce de titre — et `41001` à `41003`
-  portent les trois parties (290 + 301 + 217 s, soit 808 s contre 840 s pour l'unique piste
-  catalane). D'où une troisième forme dans `labelFor` : « Litanies » seul pour le verset 0, puis
-  « Litanies · Partie 1…3 ». ⚠ **Ce que dit l'annonce de 4 s reste à vérifier** — personne ici ne
-  l'a écoutée ; si ce n'est qu'un titre, elle peut être écartée comme `00000a` l'a été.
+- **Les litanies arrivent en quatre fichiers** (`41000` ne fait que 4,1 s — une annonce de titre
+  — et `41001` à `41003` portent les trois parties). Isaure les a voulues en une seule piste, le
+  25/11/2026 : elles sont **recousues à la conversion** sous l'identifiant `41000`, 812 s en tout,
+  soit la somme exacte des quatre. C'est la table `FUSION` de `scripts/audio.mjs`, qui passe par
+  le démultiplexeur `concat` de ffmpeg ; si un morceau manquait, elle ne ferait rien — mieux vaut
+  quatre pistes qu'une piste trouée. Le manifeste français compte donc **2 806 pistes** et non
+  2 809. L'espagnol garde ses quatre plages, qui portent des bornes de versets.
 - **C'est le jeu le plus complet des trois** : les 40 livres ont leur verset 0 et il n'y a aucun
   trou interne. Il sert donc de référence pour juger les deux autres (voir ci-dessous).
 
@@ -317,13 +332,13 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   sont en AAC mono, et leur durée correspond à moins d'une demi-seconde près. Zéro anomalie.
   Lecture vérifiée dans l'app : verset, préliminaire, une plage de litanies (3 min 30),
   tirage, enchaînement, et le passage ES → CA qui conserve le verset.
-- **Conversion FR terminée** (25/11/2026) : 2 809 pistes, 766 Mo dans `audio-web/fr`, aucun échec.
+- **Conversion FR terminée** (25/11/2026) : 2 806 pistes (les quatre litanies recousues en une), 766 Mo dans `audio-web/fr`, aucun échec.
   Même contrôle complet que pour l'espagnol — identifiants redérivés des sources et recoupés avec
   le manifeste, puis chaque piste comparée à son mp3 d'origine (existence, AAC mono, durée à
   moins d'une demi-seconde) : **zéro anomalie**. Vérifié dans l'app : un verset, l'hypographe du
   livre XIV (verset 68, que le catalan n'a pas), l'épigraphe du livre XXXVIII, l'annonce des
   litanies (4 s) et leur partie 2 (5 min 01). Console propre.
-  Le site compte désormais **8 434 fichiers** pour une limite de 20 000 par version.
+  Le site compte désormais **8 437 fichiers** pour une limite de 20 000 par version.
 - Un piège rencontré : l'arrêt « disque plein » avait laissé `02075.m4a` tronqué à 44 octets, et la reprise le
   **sautait** parce que le fichier existait. `scripts/audio.mjs` refait désormais tout fichier < 1 Ko, et ne
   renomme le `.part.m4a` que s'il dépasse cette taille. Fichier réparé.
@@ -409,16 +424,28 @@ page.
 **Images** : `node scripts/images.mjs` refait l'aperçu de partage et les vignettes du lecteur.
 Elles sont versionnées pour qu'un déploiement n'ait jamais besoin de Chrome.
 
-**Aperçu de partage** : `src/og.template.html` → `src/assets/og.png` (1200 × 630), fabriquée par
-`node scripts/images.mjs` via Chrome sans interface — seul moyen sûr d'avoir les vraies fontes et des
-dimensions exactes. **L'image est versionnée** pour qu'un déploiement n'ait jamais besoin de
-Chrome. Elle ne porte que l'auteur, le titre français et l'oreille — Isaure a écarté les trois titres
-empilés d'une première version. Les balises suivent l'image : `og:title` et `og:locale` sont en
-français, les deux autres langues restant en `og:locale:alternate`, et la description reste
-trilingue pour qu'un lecteur catalan ou espagnol sache que sa langue existe.
-Les adresses des balises sont **absolues** (`https://mraudio.app/og.png`) : un aperçu est fabriqué
-par un serveur distant, qui ne sait pas d'où la page a été servie. Changer de domaine oblige donc
-à les reprendre dans `index.html`.
+**Aperçu de partage** : `src/og.template.html` → `src/assets/og-ca.png`, `og-es.png`, `og-fr.png`
+(1200 × 630), fabriquées par `node scripts/images.mjs` via Chrome sans interface — seul moyen sûr
+d'avoir les vraies fontes et des dimensions exactes. Le gabarit est unique : il lit le titre dans
+le fragment du `file://`, de sorte que les trois images sortent du même fichier. **Elles sont
+versionnées** pour qu'un déploiement n'ait jamais besoin de Chrome. Chacune ne porte que l'auteur,
+le titre de l'œuvre dans sa langue et l'oreille — Isaure a écarté les trois titres empilés d'une
+première version. `og.png` est une copie de la française : c'est l'aperçu de la racine.
+
+**Une page d'entrée par langue** (`/ca`, `/es`, `/fr`), assemblée par `scripts/deploy.mjs` à
+partir d'`index.html` : titre, description, `og:*` et langue déclarée y sont dans la langue du
+chemin. La racine garde son aperçu trilingue — qui partage le domaine nu ne partage pas une
+langue. Deux pièges :
+- l'application est construite en adresses relatives (`./assets/`, `./audio/`). Servie sous
+  `/fr`, elle les résoudrait autrement selon qu'il y a ou non une barre finale. D'où le
+  **`<base href="/">`** posé en tête des trois pages : tout repart de la racine, la question ne
+  se pose plus. (Cloudflare redirige `/fr/` vers `/fr`, mais mieux vaut ne pas en dépendre.) ;
+- le garde-fou de `poser()` vérifie que la balise **existe**, pas que le texte change : pour le
+  français, le titre posé est le même que celui de la racine, et comparer les textes faisait
+  échouer le déploiement sur une page pourtant juste.
+Les adresses des balises sont **absolues** (`https://mraudio.app/og-fr.png`) : un aperçu est
+fabriqué par un serveur distant, qui ne sait pas d'où la page a été servie. Changer de domaine
+oblige donc à les reprendre dans `index.html` **et** dans `scripts/deploy.mjs`.
 
 **Page 404** (`src/404.template.html`, assemblée par `scripts/deploy.mjs`) : « Livre 0 ·
 Verset 404 », dans la mise en page du repère de l'application. Deux contraintes l'ont
@@ -455,8 +482,9 @@ que le sien : rien ne doit partir sur le compte d'un tiers.
   mauvais verset tant qu'ils manquent.
 - **`12079`, qui n'existe qu'en catalan** : fichier en trop, ou manquant dans les deux autres
   langues ? Le français, qui n'a aucun autre trou, s'arrête à 78.
-- **L'annonce de 4 s des litanies françaises** (`41000`) : si ce n'est qu'un titre dit à voix
-  haute, elle peut être écartée comme `00000a` l'a été en catalan.
+- **Faut-il recoudre aussi les quatre plages de litanies espagnoles ?** Le français et le
+  catalan tiennent en une piste ; l'espagnol est le seul à rester découpé, et ses bornes de
+  versets sont la seule raison de le garder ainsi.
 - **Les préliminaires** : le français n'en a aucun, l'espagnol une seule piste de 83,6 s contre
   61,2 + 50,0 s en catalan (ce n'est donc pas la somme des deux). Manque-t-il des fichiers ?
   Et leurs noms propres en ES / FR, sans quoi on retombe sur « Préliminaires · Partie n ».

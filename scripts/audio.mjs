@@ -22,7 +22,7 @@
  * - Avec --convert : convertit tout en AAC mono 64 kbps → <out>/<lang>/<livre>/<id>.m4a (ffmpeg requis).
  *   Les fichiers déjà convertis sont sautés : on peut relancer sans risque.
  */
-import { readdirSync, statSync, mkdirSync, writeFileSync, existsSync, renameSync } from 'node:fs'
+import { readdirSync, statSync, mkdirSync, writeFileSync, existsSync, renameSync, rmSync } from 'node:fs'
 import { join, extname, basename, dirname, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -168,6 +168,23 @@ for (const file of walk(src).sort()) {
 litanies.sort((a, b) => a.from - b.from)
 litanies.forEach(({ file }, i) => found.set(`41000${String.fromCharCode(97 + i)}`, file))
 
+/**
+ * Pistes à recoudre bout à bout. Les litanies françaises arrivent en quatre fichiers — une
+ * annonce de quatre secondes, puis trois parties — là où le catalan tient en une seule piste.
+ * La cliente les veut en une, sans numéro de partie : on les concatène dans l'ordre sous
+ * l'identifiant 41000. Si un morceau manque, on ne touche à rien : mieux vaut quatre pistes
+ * qu'une piste trouée.
+ */
+const FUSION = { fr: { '41000': ['41000', '41001', '41002', '41003'] } }
+const fusionnes = []
+for (const [cible, morceaux] of Object.entries(FUSION[lang] ?? {})) {
+  const fichiers = morceaux.map((id) => found.get(id)).filter((f) => typeof f === 'string')
+  if (fichiers.length !== morceaux.length) continue
+  for (const id of morceaux) found.delete(id)
+  found.set(cible, fichiers)
+  fusionnes.push(`${cible} ← ${morceaux.join(' + ')}`)
+}
+
 const books = {}
 for (const id of [...found.keys()].sort()) {
   const book = String(parseInt(id.slice(0, 2), 10))
@@ -184,6 +201,7 @@ if (dropped.length) console.log(`  écartés volontairement (${dropped.length}) 
 if (mismatched.length) console.log(`  ⚠ livre du nom ≠ livre du dossier (${mismatched.length}) : ${mismatched.join(', ')}`)
 if (litanies.length) console.log(`  litanies en ${litanies.length} plages → ${litanies.map((_, i) => '41000' + String.fromCharCode(97 + i)).join(', ')}`)
 if (choisis.size) console.log(`  prises choisies par la cliente (${choisis.size}) : ${[...choisis].map((id) => `${id} ← ${PREFER.get(id)}`).join(', ')}`)
+if (fusionnes.length) console.log(`  pistes recousues : ${fusionnes.join(', ')}`)
 
 if (args.convert) {
   const jobs = [...found.entries()]
@@ -195,12 +213,21 @@ if (args.convert) {
     if (existsSync(dest) && statSync(dest).size >= MIN_BYTES) return res(true)
     mkdirSync(dirname(dest), { recursive: true })
     const tmp = dest + '.part.m4a'
-    const p = spawn('ffmpeg', ['-nostdin', '-v', 'error', '-y', '-i', file, '-vn', '-ac', '1', '-ar', '44100',
+    // Plusieurs sources : le démultiplexeur « concat » de ffmpeg, qui lit une liste de chemins.
+    // Les apostrophes y sont doublées, c'est l'échappement qu'il attend.
+    let entree = ['-i', file]
+    if (Array.isArray(file)) {
+      const liste = dest + '.liste.txt'
+      writeFileSync(liste, file.map((f) => `file '${f.replaceAll("'", "'\\''")}'`).join('\n') + '\n')
+      entree = ['-f', 'concat', '-safe', '0', '-i', liste]
+    }
+    const p = spawn('ffmpeg', ['-nostdin', '-v', 'error', '-y', ...entree, '-vn', '-ac', '1', '-ar', '44100',
       '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', tmp], { stdio: ['ignore', 'ignore', 'inherit'] })
     p.on('error', () => res(false))
     p.on('close', (code) => {
       const ok = code === 0 && existsSync(tmp) && statSync(tmp).size >= MIN_BYTES
       if (ok) renameSync(tmp, dest)
+      rmSync(dest + '.liste.txt', { force: true })
       res(ok)
     })
   })
