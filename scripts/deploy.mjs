@@ -113,9 +113,8 @@ function poser(html, motif, valeur, quoi) {
 
 for (const [l, p] of Object.entries(PAGES)) {
   const autres = Object.entries(PAGES).filter(([k]) => k !== l).map(([, v]) => v.locale)
-  let page = souche
-    .replace('<html lang="ca">', `<html lang="${l}">`)
-    .replace('<head>', `<head>\n    <base href="/" />`)
+  let page = souche.replace('<head>', `<head>\n    <base href="/" />`)
+  page = poser(page, /(<html lang=")[a-z-]+/, l, 'html lang')
   page = poser(page, /(<title>)[^<]*/, `${p.work} — Louis Cattiaux`, 'title')
   page = poser(page, /(<meta name="description" content=")[^"]*/, p.desc, 'description')
   page = poser(page, /(<meta property="og:url" content=")[^"]*/, `${SITE}/${l}`, 'og:url')

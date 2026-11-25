@@ -209,8 +209,13 @@ Retirés à la demande d'Isaure, ne pas remettre sans elle :
 
 ## Structure
 - `src/lib/catalog.ts` — charge `src/data/manifest.<lang>.json` (embarqués au build), URL audio, voisins, tirage.
-- `src/lib/i18n.ts` — textes CA/ES/FR. La langue vient du hash, sinon de `localStorage`
-  (`mr-lang`, écrit à chaque clic sur le sélecteur), sinon de la langue du navigateur.
+- `src/lib/i18n.ts` — textes CA/ES/FR. La langue vient du chemin, sinon de `localStorage`
+  (`mr-lang`, écrit à chaque clic sur le sélecteur), sinon de la langue du navigateur, et
+  **à défaut de tout le reste, le français** (demandé par Isaure le 25/11/2026) : c'est la
+  langue du texte d'origine, et celle que sert la racine. Un navigateur réglé en catalan ou en
+  espagnol reçoit toujours la sienne. Le français est aussi **en tête du sélecteur** (`LANGS`),
+  écrit en dur dans `index.html` (`<html lang>`, titre) et dans la page 404, qui doit garder un
+  sens sans JavaScript.
   Arriver par un lien partagé affiche bien la langue du lien **sans** écraser la préférence
   enregistrée : un visiteur français qui ouvre un lien catalan retrouve le français à sa
   prochaine visite sur l'adresse nue. C'est voulu.
@@ -465,8 +470,9 @@ dessinée :
   Ortica embarquée en base64, icône reprise d'`index.html`. 40 Ko, zéro requête ;
 - elle ne doit pas répéter son texte en trois langues. Les trois sont dans le fichier, mais un
   script n'en montre qu'une : la préférence enregistrée par l'application (`mr-lang`), sinon la
-  langue du navigateur, sinon le catalan — qui est écrit en dur dans le HTML, de sorte que sans
-  JavaScript la page garde un sens au lieu de se vider.
+  langue du navigateur, sinon le français — qui est écrit en dur dans le HTML, de sorte que sans
+  JavaScript la page garde un sens au lieu de se vider. (C'était le catalan jusqu'au
+  25/11/2026 : la page suit la langue par défaut du site, les deux doivent rester d'accord.)
 
 **En ligne depuis le 23/11/2026 : <https://mraudio.app>**, sur le compte personnel d'Isaure.
 Le premier envoi a pris 9 min 30 pour 5 619 fichiers ; les suivants ne transmettent que ce qui

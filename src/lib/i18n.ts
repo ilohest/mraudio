@@ -1,7 +1,8 @@
 import { ref, computed } from 'vue'
 
 export type Lang = 'ca' | 'es' | 'fr'
-export const LANGS: Lang[] = ['ca', 'es', 'fr']
+/** L'ordre du sélecteur, en haut à droite. Le français d'abord, à la demande d'Isaure. */
+export const LANGS: Lang[] = ['fr', 'ca', 'es']
 
 const messages = {
   ca: {
@@ -179,7 +180,9 @@ function initialLang(): Lang {
     if (saved && (LANGS as string[]).includes(saved)) return saved as Lang
   } catch { /* stockage indisponible */ }
   const nav = navigator.language.slice(0, 2)
-  return nav === 'es' ? 'es' : nav === 'fr' ? 'fr' : 'ca'
+  // À défaut de tout le reste, le français : c'est la langue du texte d'origine, et celle que
+  // sert la racine. Un visiteur catalan ou espagnol la trouve d'un clic, et son choix est gardé.
+  return nav === 'es' ? 'es' : nav === 'ca' ? 'ca' : 'fr'
 }
 
 export const lang = ref<Lang>(initialLang())

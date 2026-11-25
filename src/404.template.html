@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ca">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -108,7 +108,7 @@
     <main class="card">
       <div class="hero">
         <div class="slot">
-          <p class="label" data-dit="book">Llibre</p>
+          <p class="label" data-dit="book">Livre</p>
           <p class="num">0</p>
         </div>
         <div class="slot">
@@ -116,14 +116,14 @@
           <p class="num accent">404</p>
         </div>
       </div>
-      <p class="says" data-dit="says">Aquest verset no és al llibre.</p>
+      <p class="says" data-dit="says">Ce verset n’est pas dans le livre.</p>
     </main>
 
     <a class="home" href="/">
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20.2 12H3.8" /><path d="M9.8 6 3.8 12l6 6" />
       </svg>
-      <span data-dit="home">Inici</span>
+      <span data-dit="home">Accueil</span>
     </a>
 
     <script>
@@ -131,8 +131,8 @@
        * Une seule langue à l'écran, pas trois. La page est servie telle quelle à n'importe
        * quelle adresse, donc elle ne peut pas savoir d'avance qui la lit : elle reprend la
        * préférence que l'application a enregistrée, sinon la langue du navigateur. Le
-       * catalan est déjà écrit dans le HTML — sans JavaScript, c'est lui qui reste, et la
-       * page garde un sens.
+       * français est déjà écrit dans le HTML — sans JavaScript, c'est lui qui reste, et la
+       * page garde un sens. C'est aussi la langue que sert la racine.
        */
       ;(function () {
         var T = {
@@ -142,7 +142,7 @@
         }
         var l = null
         try { var s = localStorage.getItem('mr-lang'); if (T[s]) l = s } catch (e) { /* stockage indisponible */ }
-        if (!l) { var n = (navigator.language || 'ca').slice(0, 2); l = T[n] ? n : 'ca' }
+        if (!l) { var n = (navigator.language || 'fr').slice(0, 2); l = T[n] ? n : 'fr' }
         document.documentElement.lang = l
         var els = document.querySelectorAll('[data-dit]')
         for (var i = 0; i < els.length; i++) els[i].textContent = T[l][els[i].getAttribute('data-dit')]
