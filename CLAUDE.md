@@ -59,9 +59,9 @@ dessous. Il n'y a plus de composant `VersePicker` — il faisait doublon avec le
   numéro à côté du mot. Et puisque le mot est écrit là, il se **tape** : « Litanies » dans la
   case du livre les ouvre, comme « Épigraphes » ouvre le verset 0. Taper le mot vide la case du
   verset, faute de quoi la validation échouerait sur une plage « 0 – 0 » incompréhensible.
-  Cela ne vaut que là où les litanies tiennent en **une seule piste** (catalan, français) :
-  l'espagnol les découpe en quatre plages de versets, qu'il faut distinguer, et qui gardent donc
-  leur nom au-dessus des cases (`litanyAlone` dans `NowPlaying.vue`).
+  Les trois langues tiennent désormais en une piste, mais le garde-fou `litanyAlone`
+  (`NowPlaying.vue`) reste : si une langue arrivait un jour découpée, quatre cases identiques
+  mentiraient, et le nom retournerait au-dessus des champs.
 - **Structure d'un livre** (indiquée par Isaure le 23/11/2026) : le verset 0 en est l'épigraphe
   et le dernier verset l'hypographe. L'épigraphe s'écrit **en toutes lettres à la place du
   numéro** — « 0 » ne dit rien à personne — tandis que l'hypographe **garde son numéro**, qui
@@ -274,7 +274,7 @@ Particularités (FR), relevées le 25/11/2026 sur le disque externe JC :
   soit la somme exacte des quatre. C'est la table `FUSION` de `scripts/audio.mjs`, qui passe par
   le démultiplexeur `concat` de ffmpeg ; si un morceau manquait, elle ne ferait rien — mieux vaut
   quatre pistes qu'une piste trouée. Le manifeste français compte donc **2 806 pistes** et non
-  2 809. L'espagnol garde ses quatre plages, qui portent des bornes de versets.
+  2 809, et l'espagnol **2 804** depuis que ses quatre plages ont suivi le même chemin.
 - **C'est le jeu le plus complet des trois** : les 40 livres ont leur verset 0 et il n'y a aucun
   trou interne. Il sert donc de référence pour juger les deux autres (voir ci-dessous).
 
@@ -327,6 +327,7 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
 - **Conversion CA terminée** : 2 808 pistes (2 810 moins `00000a` et `04000T`), 803 Mo dans
   `audio-web/ca`. Tous les fichiers passent `ffprobe` (AAC mono 64 kbps, 44,1 kHz).
 - **Conversion ES terminée** (23/11/2026) : 2 807 pistes, 706 Mo dans `audio-web/es`, aucun échec.
+  Ramenées à **2 804** le 25/11/2026, les quatre plages de litanies ayant été recousues en une.
   Contrôle complet et non pas par sondage : le manifeste a été recoupé avec une dérivation
   indépendante des identifiants, puis **chaque piste comparée à sa source** — toutes existent,
   sont en AAC mono, et leur durée correspond à moins d'une demi-seconde près. Zéro anomalie.
@@ -482,9 +483,6 @@ que le sien : rien ne doit partir sur le compte d'un tiers.
   mauvais verset tant qu'ils manquent.
 - **`12079`, qui n'existe qu'en catalan** : fichier en trop, ou manquant dans les deux autres
   langues ? Le français, qui n'a aucun autre trou, s'arrête à 78.
-- **Faut-il recoudre aussi les quatre plages de litanies espagnoles ?** Le français et le
-  catalan tiennent en une piste ; l'espagnol est le seul à rester découpé, et ses bornes de
-  versets sont la seule raison de le garder ainsi.
 - **Les préliminaires** : le français n'en a aucun, l'espagnol une seule piste de 83,6 s contre
   61,2 + 50,0 s en catalan (ce n'est donc pas la somme des deux). Manque-t-il des fichiers ?
   Et leurs noms propres en ES / FR, sans quoi on retombe sur « Préliminaires · Partie n ».

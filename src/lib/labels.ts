@@ -15,17 +15,6 @@ const PRELIM_NAMES: Partial<Record<Lang, Record<string, string>>> = {
   es: { '00000b': 'Oraciones del Padre y de la Madre' },
 }
 
-/**
- * Litanies : le catalan tient en une seule piste, l'espagnol est découpé en quatre plages de
- * versets. Le français arrivait lui aussi en quatre fichiers ; ils sont recousus en une seule
- * piste à la conversion (voir `FUSION` dans scripts/audio.mjs), de sorte qu'il n'y a ici que
- * deux cas. Les bornes espagnoles viennent des noms de fichiers reçus et n'existent nulle part
- * ailleurs — le manifeste ne garde que les identifiants.
- */
-const LITANY_RANGES: Partial<Record<Lang, Record<string, string>>> = {
-  es: { '41000a': '1 – 48', '41000b': '49 – 65', '41000c': '66 – 105', '41000d': '106 – 144' },
-}
-
 /** Grand repère (« XXIII »), son étiquette (« Llibre ») et la ligne du verset. */
 export function labelFor(tr: Track, t: Messages) {
   if (tr.book === PRELIM_BOOK) {
@@ -35,9 +24,14 @@ export function labelFor(tr: Track, t: Messages) {
     return { kicker: t.work, big: t.preliminary, numeral: false, verseLabel: t.part, verse: String(n) }
   }
   if (tr.book === LITANIES_BOOK) {
-    const range = LITANY_RANGES[lang.value]?.[tr.id]
-    const big = range ? `${t.litanies} ${range}` : t.litanies
-    return { kicker: t.work, big, numeral: false, verseLabel: '', verse: '' }
+    /*
+     * Une seule piste dans les trois langues — elles n'y arrivaient pas : quatre fichiers en
+     * français (une annonce et trois parties), quatre plages de versets en espagnol. Elles sont
+     * recousues à la conversion, voir `FUSION` dans `scripts/audio.mjs`. ⚠ Les bornes des plages
+     * espagnoles (1–48, 49–65, 66–105, 106–144) ne venaient que des noms de fichiers reçus :
+     * depuis la fusion, elles ne survivent plus que dans CLAUDE.md.
+     */
+    return { kicker: t.work, big: t.litanies, numeral: false, verseLabel: '', verse: '' }
   }
   if (tr.verse === 0) {
     return { kicker: t.book, big: toRoman(tr.book), numeral: true, verseLabel: '', verse: t.epigraphs }

@@ -169,13 +169,16 @@ litanies.sort((a, b) => a.from - b.from)
 litanies.forEach(({ file }, i) => found.set(`41000${String.fromCharCode(97 + i)}`, file))
 
 /**
- * Pistes à recoudre bout à bout. Les litanies françaises arrivent en quatre fichiers — une
- * annonce de quatre secondes, puis trois parties — là où le catalan tient en une seule piste.
- * La cliente les veut en une, sans numéro de partie : on les concatène dans l'ordre sous
- * l'identifiant 41000. Si un morceau manque, on ne touche à rien : mieux vaut quatre pistes
- * qu'une piste trouée.
+ * Pistes à recoudre bout à bout. Les litanies arrivent en quatre fichiers en français — une
+ * annonce de quatre secondes, puis trois parties — et en quatre plages de versets en espagnol,
+ * là où le catalan tient en une seule piste. Isaure les veut en une partout, sans numéro de
+ * partie : on les concatène dans l'ordre sous l'identifiant 41000. Si un morceau manque, on ne
+ * touche à rien : mieux vaut quatre pistes qu'une piste trouée.
  */
-const FUSION = { fr: { '41000': ['41000', '41001', '41002', '41003'] } }
+const FUSION = {
+  fr: { '41000': ['41000', '41001', '41002', '41003'] },
+  es: { '41000': ['41000a', '41000b', '41000c', '41000d'] },
+}
 const fusionnes = []
 for (const [cible, morceaux] of Object.entries(FUSION[lang] ?? {})) {
   const fichiers = morceaux.map((id) => found.get(id)).filter((f) => typeof f === 'string')
