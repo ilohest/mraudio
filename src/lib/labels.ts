@@ -17,8 +17,9 @@ const PRELIM_NAMES: Partial<Record<Lang, Record<string, string>>> = {
 
 /**
  * Litanies : le catalan tient en une seule piste, l'espagnol est découpé en quatre plages de
- * versets. Les bornes viennent des noms de fichiers reçus et n'existent nulle part ailleurs —
- * le manifeste ne garde que les identifiants.
+ * versets, le français en trois parties numérotées (voir plus bas). Les bornes viennent des noms
+ * de fichiers reçus et n'existent nulle part ailleurs — le manifeste ne garde que les
+ * identifiants.
  */
 const LITANY_RANGES: Partial<Record<Lang, Record<string, string>>> = {
   es: { '41000a': '1 – 48', '41000b': '49 – 65', '41000c': '66 – 105', '41000d': '106 – 144' },
@@ -34,8 +35,15 @@ export function labelFor(tr: Track, t: Messages) {
   }
   if (tr.book === LITANIES_BOOK) {
     const range = LITANY_RANGES[lang.value]?.[tr.id]
-    const big = range ? `${t.litanies} ${range}` : t.litanies
-    return { kicker: t.work, big, numeral: false, verseLabel: '', verse: '' }
+    if (range) return { kicker: t.work, big: `${t.litanies} ${range}`, numeral: false, verseLabel: '', verse: '' }
+    // Le français est découpé en parties, numérotées par le verset du nom de fichier (41001 à
+    // 41003), précédées d'une annonce de quatre secondes qui porte le numéro 0 et n'a donc pas
+    // de numéro de partie. Le catalan, lui, tient en une piste : son unique identifiant est
+    // 41000, qui passe par la même branche et reste « Lletanies » tout court.
+    if (tr.verse > 0) {
+      return { kicker: t.work, big: t.litanies, numeral: false, verseLabel: t.part, verse: String(tr.verse) }
+    }
+    return { kicker: t.work, big: t.litanies, numeral: false, verseLabel: '', verse: '' }
   }
   if (tr.verse === 0) {
     return { kicker: t.book, big: toRoman(tr.book), numeral: true, verseLabel: '', verse: t.epigraphs }

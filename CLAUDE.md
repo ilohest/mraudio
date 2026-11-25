@@ -213,7 +213,8 @@ Nommage : `LLVVV` = livre (2 chiffres) + verset (3 chiffres). Verset 000 = épig
 - CA : dossier plat « EL MISSATGE RETROBAT EN AUDIO » (2 837 fichiers, 1,2 Go, formats mélangés).
 - ES : dossier `~/Downloads/Audios MR 2`, un sous-dossier par livre, **autre nommage** (voir plus bas).
   2 810 fichiers, 1,9 Go → 2 807 pistes au manifeste.
-- FR : à traiter plus tard.
+- FR : **disque externe JC**, dossier « MR FR audio » (1,7 Go), quatre sous-dossiers par dizaines
+  de livres (« Out mp3 01 à 10 »…). 2 809 mp3 → 2 809 pistes : **aucune perte, aucun doublon**.
 
 Particularités (ES), relevées le 23/11/2026 sur `~/Downloads/Audios MR 2` (2 810 mp3, 1,9 Go) :
 - **Le nommage n'est pas celui du catalan** : 2 787 fichiers sur 4 chiffres, `0765` = livre 7
@@ -245,6 +246,36 @@ Particularités (ES), relevées le 23/11/2026 sur `~/Downloads/Audios MR 2` (2 8
   ne ressemble pas à « Letanías » écrit dans le script. Les noms sont normalisés en NFC avant
   toute comparaison, sans quoi le dossier des litanies passait à la trappe en silence.
 
+Particularités (FR), relevées le 25/11/2026 sur le disque externe JC :
+- **Le nommage est exactement celui du catalan** (`LLVVV.mp3`, verset 000 = épigraphe), donc
+  `scripts/audio.mjs` l'a traité sans une ligne de changement. Deux hasards heureux : les quatre
+  sous-dossiers ne ressemblent pas à « LIBRO … », donc le garde-fou qui recoupe le livre avec le
+  dossier ne s'active pas ; et les deux `.rar` qui traînent dans le dossier sont écartés par le
+  filtre d'extensions. Sources en mp3 mono 96 kbps 44,1 kHz.
+- **Pas de préliminaires** : il n'y a pas de livre 0 en français. Les trois pistes catalanes
+  (Pare Daurat, Mare Brilant, La llum) et l'unique piste espagnole n'ont pas d'équivalent.
+- **Les litanies sont en quatre fichiers**, numérotés comme des versets et non comme des
+  sous-parties : `41000` ne fait que **4,1 s** — c'est une annonce de titre — et `41001` à `41003`
+  portent les trois parties (290 + 301 + 217 s, soit 808 s contre 840 s pour l'unique piste
+  catalane). D'où une troisième forme dans `labelFor` : « Litanies » seul pour le verset 0, puis
+  « Litanies · Partie 1…3 ». ⚠ **Ce que dit l'annonce de 4 s reste à vérifier** — personne ici ne
+  l'a écoutée ; si ce n'est qu'un titre, elle peut être écartée comme `00000a` l'a été.
+- **C'est le jeu le plus complet des trois** : les 40 livres ont leur verset 0 et il n'y a aucun
+  trou interne. Il sert donc de référence pour juger les deux autres (voir ci-dessous).
+
+**Ce que la comparaison des trois langues apprend** (25/11/2026, recoupement des trois manifestes) :
+le dernier verset d'un livre est son hypographe, et **trois livres ne s'accordent pas sur ce
+dernier verset** — l'application annonce donc l'hypographe sur le mauvais verset dans la langue
+en défaut :
+- **livre 14** : FR va jusqu'à 68, CA et ES s'arrêtent à 67 → il manque `14068` en catalan, et
+  « Hipògrafs » tombe sur le verset 67 ;
+- **livre 37** : CA et FR vont jusqu'à 70, ES s'arrête à 69 → `37070` manque en espagnol (déjà
+  signalé) ;
+- **livre 12** : CA va jusqu'à 79, ES et FR s'arrêtent à 78 → soit `12079` est un fichier en trop
+  côté catalan, soit il manque dans les deux autres langues. **Seule la cliente peut trancher.**
+Et les trous internes, à part ceux-là : `38/0` en catalan (donc bien un fichier manquant, le
+français ayant l'épigraphe du livre 38) et `3/78` en espagnol. Le français n'en a aucun.
+
 Particularités (CA) :
 - `28004(1).ogg`, `31014(2).ogg`… = copies identiques (même MD5) → ignorées.
 - « Livre 0 » = préliminaires, réglé avec la cliente le 23/11/2026 :
@@ -266,12 +297,13 @@ Commandes :
 ```
 npm run audio -- --lang ca --src "~/Downloads/EL MISSATGE RETROBAT EN AUDIO" --out ./audio-web --convert
 npm run audio -- --lang es --src "~/Downloads/Audios MR 2" --out ./audio-web --convert
+npm run audio -- --lang fr --src "/Volumes/JC/MR FR audio" --out ./audio-web --convert
 ```
 Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seulement le manifeste.
 
-## État au 24/11/2026
+## État au 25/11/2026
 
-**Le site est en ligne : <https://mraudio.app>**, en catalan et en espagnol. Code sur
+**Le site est en ligne : <https://mraudio.app>**, dans les trois langues. Code sur
 <https://github.com/ilohest/mraudio>. Trois designs se sont succédé, tous récupérables dans git :
 `bc9b8dd` l'ivoire d'origine, `1287a0c` le brutalisme, puis le « spécimen » actuel.
 
@@ -285,6 +317,13 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
   sont en AAC mono, et leur durée correspond à moins d'une demi-seconde près. Zéro anomalie.
   Lecture vérifiée dans l'app : verset, préliminaire, une plage de litanies (3 min 30),
   tirage, enchaînement, et le passage ES → CA qui conserve le verset.
+- **Conversion FR terminée** (25/11/2026) : 2 809 pistes, 766 Mo dans `audio-web/fr`, aucun échec.
+  Même contrôle complet que pour l'espagnol — identifiants redérivés des sources et recoupés avec
+  le manifeste, puis chaque piste comparée à son mp3 d'origine (existence, AAC mono, durée à
+  moins d'une demi-seconde) : **zéro anomalie**. Vérifié dans l'app : un verset, l'hypographe du
+  livre XIV (verset 68, que le catalan n'a pas), l'épigraphe du livre XXXVIII, l'annonce des
+  litanies (4 s) et leur partie 2 (5 min 01). Console propre.
+  Le site compte désormais **8 434 fichiers** pour une limite de 20 000 par version.
 - Un piège rencontré : l'arrêt « disque plein » avait laissé `02075.m4a` tronqué à 44 octets, et la reprise le
   **sautait** parce que le fichier existait. `scripts/audio.mjs` refait désormais tout fichier < 1 Ko, et ne
   renomme le `.part.m4a` que s'il dépasse cette taille. Fichier réparé.
@@ -409,12 +448,26 @@ que le sien : rien ne doit partir sur le compte d'un tiers.
   dernier verset 0,97 fois — aucune signature distinctive. Seule la cliente peut confirmer.
 
 ## À faire
-- Le français, quand les audios arriveront.
-- Lui signaler les trois versets espagnols manquants (3/78, 12/79, 37/70) et l'unique
-  préliminaire espagnol, au cas où des fichiers manqueraient.
-- Récupérer les noms ES / FR du livre 0 (l'espagnol n'a qu'une piste préliminaire).
-- Faire confirmer l'orthographe de « Adrés Molero » dans les crédits ES (« Andrés » ?), et la
-  formulation « Disseny i desenvolupament » pour la signature d'Isaure.
-- Choisir l'hébergement : sous-dossier du site (ex. `louiscattiaux.com/oracle/`) avec `audio/` à côté,
-  ou audios dans uploads et `VITE_AUDIO_BASE` (voir `.env.example`). Option : intégration WordPress par iframe.
-- Rien n'est en ligne : aucune mise en ligne sans l'accord d'Isaure.
+À faire confirmer par la cliente, par ordre de conséquence :
+- **Les fichiers qui manquent, maintenant que les trois langues se recoupent** : `14068` et
+  `38000` en catalan, `03078` et `37070` en espagnol. Les deux premiers de chaque langue sont le
+  dernier verset ou l'épigraphe de leur livre, donc l'application annonce l'hypographe sur le
+  mauvais verset tant qu'ils manquent.
+- **`12079`, qui n'existe qu'en catalan** : fichier en trop, ou manquant dans les deux autres
+  langues ? Le français, qui n'a aucun autre trou, s'arrête à 78.
+- **L'annonce de 4 s des litanies françaises** (`41000`) : si ce n'est qu'un titre dit à voix
+  haute, elle peut être écartée comme `00000a` l'a été en catalan.
+- **Les préliminaires** : le français n'en a aucun, l'espagnol une seule piste de 83,6 s contre
+  61,2 + 50,0 s en catalan (ce n'est donc pas la somme des deux). Manque-t-il des fichiers ?
+  Et leurs noms propres en ES / FR, sans quoi on retombe sur « Préliminaires · Partie n ».
+- **L'orthographe des mots « Hipògrafs » (CA) et « Hipógrafes » (ES)** : ce sont des
+  constructions par analogie avec « Epígrafs » / « Epígrafes ». Seul « Hypographes » est sûr.
+- **L'orthographe de « Adrés Molero »** dans les crédits ES (« Andrés » ?), et la formulation
+  « Disseny i desenvolupament » pour la signature d'Isaure.
+- **`04000T`** (CA, 10 s contre 44 s pour `04000`) : écarté pour l'instant, à écouter.
+
+Côté chantier :
+- Les sources FR vivent sur le **disque externe JC** : rien n'en est copié sur le Mac, seuls les
+  766 Mo convertis le sont. Le disque doit être monté pour relancer une conversion.
+- Reste la question de `louiscattiaux.com` : le site a son propre domaine, mais rien n'y renvoie
+  encore depuis le site de l'éditeur.
