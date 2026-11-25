@@ -7,8 +7,15 @@ export const LAST_BOOK = 40
 export const PRELIM_BOOK = 0
 export const LITANIES_BOOK = 41
 
-/** Un tirage sur cinquante tombe sur les préliminaires ou les litanies. */
-export const SPECIAL_ODDS = 50
+/**
+ * Un tirage sur deux cents ouvre **une** piste spéciale donnée — un préliminaire, ou les
+ * litanies. C'est une chance par piste, et non par lot, parce que le lot n'a pas la même
+ * taille selon la langue : quatre pistes en catalan, deux en espagnol, une seule en français,
+ * qui n'a pas de préliminaires. Pondérer le lot faisait donc sortir les litanies françaises
+ * un tirage sur cinquante, soit treize minutes de récital quatre fois plus souvent qu'en
+ * catalan. Avec une chance par piste, les trois langues sont logées à la même enseigne.
+ */
+export const SPECIAL_ODDS = 200
 
 interface Manifest {
   lang: Lang
@@ -81,7 +88,7 @@ export class Catalog {
     const verses = this.tracks.filter(
       (tr) => tr.book >= FIRST_BOOK && tr.book <= LAST_BOOK && tr.verse > 0 && !tr.part,
     )
-    const wantsSpecial = special.length > 0 && Math.random() < 1 / SPECIAL_ODDS
+    const wantsSpecial = Math.random() < special.length / SPECIAL_ODDS
     const pool = wantsSpecial || verses.length === 0 ? special : verses
     let pick: Track
     do pick = pool[Math.floor(Math.random() * pool.length)]

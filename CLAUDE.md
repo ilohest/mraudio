@@ -81,18 +81,20 @@ franchit les livres et lit aussi les épigraphes : c'est une lecture continue de
 
 **Tirage** : il couvre les versets des livres I–XL, **plus les préliminaires et les litanies** —
 c'est leur seul accès depuis que la ligne « També » a été retirée. Attention : cela ne fait que
-4 pistes sur 2 809 : à chances égales elles ne sortiraient qu'un tirage sur sept cents. Le tirage
-est donc **pondéré** (`SPECIAL_ODDS = 50` dans `catalog.ts`) : on tire d'abord le genre — une fois
-sur cinquante, ce sera l'une d'elles — puis la piste dans son propre lot. Les épigraphes restent
-hors du tirage. N'ayant pas de numéro, ces pistes n'ont pas de rouleau : leur nom arrive dans la
-case du livre, sans animation.
+une poignée de pistes sur près de trois mille : à chances égales elles ne sortiraient qu'un
+tirage sur sept cents. Le tirage est donc **pondéré** (`SPECIAL_ODDS = 200` dans `catalog.ts`) :
+on tire d'abord le genre, puis la piste dans son propre lot. Les épigraphes restent hors du
+tirage. N'ayant pas de numéro, ces pistes n'ont pas de rouleau : leur nom arrive dans la case
+du livre, sans animation.
 
-⚠ **Le lot spécial n'a pas la même taille selon la langue, et la fusion des litanies l'a encore
-réduit.** Catalan : trois préliminaires et les litanies, soit quatre pistes → les litanies
-sortent un tirage sur deux cents. Espagnol : un préliminaire et les litanies → un sur cent.
-**Français : rien d'autre que les litanies** → **un tirage sur cinquante ouvre un récital de
-treize minutes**. Si cela se révèle trop fréquent à l'usage, c'est `SPECIAL_ODDS` qu'il faut
-relever, pas la liste qu'il faut changer.
+**La chance porte sur la piste, pas sur le lot** — `special.length / SPECIAL_ODDS` — et ce
+détail compte, parce que **le lot n'a pas la même taille selon la langue** : quatre pistes en
+catalan (trois préliminaires et les litanies), deux en espagnol, **une seule en français**, qui
+n'a pas de préliminaires. Tant que la pondération portait sur le lot, les litanies françaises
+sortaient un tirage sur cinquante, soit treize minutes de récital quatre fois plus souvent qu'en
+catalan. Corrigé le 25/11/2026, à la demande d'Isaure : désormais **chaque piste spéciale sort
+un tirage sur deux cents, dans les trois langues** (mesuré sur 400 000 tirages simulés par
+langue ; le catalan, lui, n'a pas bougé).
 
 **La vue tient exactement l'écran** (≥ 340 × 620), téléphone compris : `.screen` fait `100svh`, la carte du lecteur
 prend ce qui reste (`flex: 1`), et ses grands chiffres se calibrent sur la hauteur de la carte
