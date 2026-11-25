@@ -314,7 +314,7 @@ Relançable : les fichiers déjà convertis sont sautés. Sans `--convert` : seu
 
 ## Mise en ligne
 
-Cible : **Cloudflare Workers en site statique** (pas de code, seulement des fichiers), domaine
+Cible : **Cloudflare Workers en site statique**, domaine
 **mraudio.app**, déjà sur les serveurs de noms Cloudflare. Tout tient dans le forfait gratuit :
 5 621 fichiers pour une limite de 20 000 par version, le plus gros à 6,7 Mo pour une limite de
 25 Mo. Aucune limite de poids total n'est documentée.
@@ -330,6 +330,29 @@ octet consommé, ce qui compte sur un disque serré. Il les prend dans `audio-we
 Les audios restent servis en relatif (`./audio/`), donc tout vit sous le même domaine : pas de
 R2, pas de CORS, pas de second réglage. `VITE_AUDIO_BASE` reste disponible si on veut un jour
 les sortir ailleurs.
+
+**Le seul code du site : `worker/index.js`, qui répond aux plages d'octets sur `/audio/*`.**
+Les assets statiques de Cloudflare **ignorent l'en-tête `Range`** : ils renvoient 200 avec le
+fichier entier, sans `Accept-Ranges`. Le navigateur en conclut que le flux n'est pas déplaçable
+(`seekable` vaut `[0, 0]`) et **refuse toute écriture de `currentTime`** : le curseur de lecture
+reste collé au début, et le rail ne sert plus à rien. La lecture, elle, marche — d'où un défaut
+qui passe inaperçu. Signalé par Isaure le 25/11/2026.
+Le piège : **le serveur de développement de Vite répond 206**, donc le défaut n'existe qu'en
+ligne. Pour le reproduire sans déployer, `npx wrangler dev` sert `deploy/` avec le Worker.
+`run_worker_first: ["/audio/*"]` dans `wrangler.jsonc` fait que **le reste du site passe à côté
+du Worker** : servi directement par la couche d'assets, sans invocation — la consommation du
+forfait gratuit ne porte que sur les audios. Le Worker lit la taille dans `content-length`, qui
+est là en production mais **pas sous `wrangler dev`** : sans la solution de repli (lire le corps)
+il renvoyait 200 en local tout en marchant en ligne, soit le défaut exactement à l'envers.
+Vérifié en ligne après déploiement : 206 avec le bon `Content-Range`, plage ouverte, N derniers
+octets, 416 hors limites, deux plages → le fichier entier, et les octets servis identiques à
+ceux du fichier source. Dans le navigateur, `seekable` passe à `[0, 840]` et un saut à 600 s
+atterrit juste, en ne téléchargeant que cette région.
+
+**Le compte Cloudflare doit être désigné explicitement** : le jeton d'Isaure voit une dizaine de
+comptes de clientes, donc `wrangler deploy` ne peut pas choisir seul. Son compte personnel est
+`Isaure.lohest@gmail.com's Account` ; passer son identifiant en variable d'environnement
+(`CLOUDFLARE_ACCOUNT_ID`) évite toute question — et tout envoi chez une tierce.
 
 **Fiche du lecteur système** (`App.vue`) : `navigator.mediaSession` reçoit le titre du verset,
 l'auteur, l'œuvre et une vignette carrée « MR » en trois tailles, plus les commandes

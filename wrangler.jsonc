@@ -1,12 +1,19 @@
 {
-  // Site statique servi par Cloudflare Workers : pas de code, seulement des fichiers.
-  // Le dossier « deploy » est assemblé par scripts/deploy.mjs (application + audios).
+  // Site statique servi par Cloudflare Workers. Un seul bout de code : worker/index.js, qui ne
+  // sert que /audio/* et n'existe que pour répondre aux plages d'octets — sans quoi le curseur
+  // de lecture est figé en ligne (voir le commentaire du fichier).
   "name": "mraudio",
   "compatibility_date": "2025-11-01",
+  "main": "./worker/index.js",
   "assets": {
+    // Le dossier « deploy » est assemblé par scripts/deploy.mjs (application + audios).
     "directory": "./deploy",
+    "binding": "ASSETS",
     // Toute adresse inconnue reçoit 404.html, avec le code 404.
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // Tout le reste du site passe à côté du Worker : servi par la couche d'assets, sans
+    // invocation — ce qui garde la consommation du forfait gratuit sur les seuls audios.
+    "run_worker_first": ["/audio/*"]
   },
   // Domaine personnalisé : Cloudflare crée l'enregistrement DNS lui-même, à condition que la
   // zone mraudio.app soit dans le même compte que le Worker.
